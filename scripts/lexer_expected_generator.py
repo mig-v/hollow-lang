@@ -33,7 +33,11 @@ tokenMap = {
     "{" : "TokenType::OpenCurly",
     "}" : "TokenType::CloseCurly",
     ":" : "TokenType::Colon",
-    "==" : "TokenType::Equality"
+    "==" : "TokenType::Equality",
+    "+" : "TokenType::Plus",
+    "-" : "TokenType::Minus",
+    "*" : "TokenType::Asterisk",
+    "/" : "TokenType::ForwardSlash"
     }
 
 def parseFile(filename):

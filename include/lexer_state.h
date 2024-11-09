@@ -1,0 +1,33 @@
+#pragma once
+
+enum class LexerState
+{
+	StartState,
+	IntLiteralState,
+	FloatLiteralState,
+	CharLiteralState,
+	EscapeSequenceState,
+	IdentifierKeywordState,
+	AssignState,
+	OpenParenState,
+	CloseParenState,
+	OpenCurlyState,
+	CloseCurlyState,
+	ColonState,
+	SemicolonState,
+	AcceptState,
+	InvalidState,
+	LessThanState,
+	GreaterThanState,
+	LessThanEqState,
+	GreaterThanEqState,
+	LogicalNotState,
+	NotEqState,
+	EqualityState,
+	PlusState,
+	MinusState,
+	AsteriskState,
+	ForwardSlashState,
+	EOFState,
+	NumLexerStates,
+};

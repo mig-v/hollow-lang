@@ -38,6 +38,7 @@ void Lexer::reset()
 	state = LexerState::StartState;
 	currentToken.type = TokenType::None;
 	tokenIndex = 0;
+	lineNum = 1;
 
 	currentLiteral.clear();
 	tokens.clear();
@@ -50,6 +51,11 @@ Token* Lexer::getToken()
 	return (tokenIndex < tokens.size()) ? &tokens[tokenIndex++] : nullptr;
 }
 
+Token* Lexer::peek()
+{
+	return (tokenIndex < tokens.size()) ? &tokens[tokenIndex] : nullptr;
+}
+
 void Lexer::dumpTokens()
 {
 	for (size_t i = 0; i < tokens.size(); i++)
@@ -60,51 +66,51 @@ void Lexer::printToken(const Token& token)
 {
 	switch (token.type)
 	{
-		case TokenType::i8Keyword:		std::cout << "<i8Keyword  : i8>"  << std::endl; break;
-		case TokenType::i16Keyword:		std::cout << "<i16Keyword : i16>" << std::endl; break;
-		case TokenType::i32Keyword:		std::cout << "<i32Keyword : i32>" << std::endl; break;
-		case TokenType::i64Keyword:		std::cout << "<i64Keyword : i64>" << std::endl; break;
-		case TokenType::u8Keyword:		std::cout << "<u8Keyword  : u8>"  << std::endl; break;
-		case TokenType::u16Keyword:		std::cout << "<u16Keyword : u16>" << std::endl; break;
-		case TokenType::u32Keyword:		std::cout << "<u32Keyword : u32>" << std::endl; break;
-		case TokenType::u64Keyword:		std::cout << "<u64Keyword : u64>" << std::endl; break;
-		case TokenType::f32Keyword:		std::cout << "<f32Keyword : f32>" << std::endl; break;
-		case TokenType::f64Keyword:		std::cout << "<f64Keyword : f64>" << std::endl; break;
-		case TokenType::charKeyword:	std::cout << "<charKeyword : char>" << std::endl; break;
-		case TokenType::boolKeyword:	std::cout << "<boolKeyword : bool>" << std::endl; break;
-		case TokenType::falseKeyword:	std::cout << "<falseKeyword : false>" << std::endl; break;
-		case TokenType::trueKeyword:	std::cout << "<trueKeyword : true>" << std::endl; break;
-		case TokenType::typeKeyword:	std::cout << "<typeKeyword : type>" << std::endl; break;
-		case TokenType::funcKeyword:	std::cout << "<funcKeyword : func>" << std::endl; break;
-		case TokenType::returnKeyword:	std::cout << "<returnKeyword : return>" << std::endl; break;
-		case TokenType::breakKeyword:	std::cout << "<breakKeyword : break>" << std::endl; break;
-		case TokenType::ifKeyword:		std::cout << "<ifKeyword : if>" << std::endl; break;
-		case TokenType::forKeyword:		std::cout << "<forKeyword : for>" << std::endl; break;
-		case TokenType::whileKeyword:	std::cout << "<whileKeyword : while>" << std::endl; break;
-		case TokenType::IntLiteral:		std::cout << "<IntLiteral : " << std::get<uint64_t>(token.value) << ">" << std::endl; break;
-		case TokenType::FloatLiteral:	std::cout << "<FloatLiteral : " << std::get<double>(token.value) << ">" << std::endl; break;
-		case TokenType::CharLiteral:	std::cout << "<CharLiteral : TODO IMPLEMENT>" << std::endl; break;
-		case TokenType::Identifier:		std::cout << "<Identifier : " << std::get<std::string>(token.value) << ">" << std::endl; break;
-		case TokenType::Semicolon:		std::cout << "<Semicolon>" << std::endl; break;
-		case TokenType::Assign:			std::cout << "<Assign>" << std::endl; break;
-		case TokenType::Invalid:		std::cout << "<Invalid : " << std::get<std::string>(token.value) << ">" << std::endl; break;
-		case TokenType::LessThan:		std::cout << "<LessThan>" << std::endl; break;
-		case TokenType::LessThanEq:		std::cout << "<LessThanEq>" << std::endl; break;
-		case TokenType::GreaterThan:	std::cout << "<GreaterThan>" << std::endl; break;
-		case TokenType::GreaterThanEq:	std::cout << "<GreaterThanEq>" << std::endl; break;
-		case TokenType::LogicalNot:		std::cout << "<LogicalNot>" << std::endl; break;
-		case TokenType::NotEq:			std::cout << "<NotEq>" << std::endl; break;
-		case TokenType::Equality:		std::cout << "<Equality>" << std::endl; break;
-		case TokenType::OpenParen:		std::cout << "<OpenParen>" << std::endl; break;
-		case TokenType::CloseParen:		std::cout << "<CloseParen>" << std::endl; break;
-		case TokenType::OpenCurly:		std::cout << "<OpenCurly>" << std::endl; break;
-		case TokenType::CloseCurly:		std::cout << "<CloseCurly>" << std::endl; break;
-		case TokenType::Colon:			std::cout << "<Colon>" << std::endl; break;
-		case TokenType::Plus:			std::cout << "<Plus>" << std::endl; break;
-		case TokenType::Minus:			std::cout << "<Minus>" << std::endl; break;
-		case TokenType::Asterisk:		std::cout << "<Asterisk>" << std::endl; break;
-		case TokenType::ForwardSlash:	std::cout << "<ForwardSlash>" << std::endl; break;
-		case TokenType::Eof:			std::cout << "<EOF>" << std::endl; break;
+		case TokenType::i8Keyword:		std::cout << "<i8Keyword  : i8> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::i16Keyword:		std::cout << "<i16Keyword : i16> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::i32Keyword:		std::cout << "<i32Keyword : i32> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::i64Keyword:		std::cout << "<i64Keyword : i64> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::u8Keyword:		std::cout << "<u8Keyword  : u8> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::u16Keyword:		std::cout << "<u16Keyword : u16> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::u32Keyword:		std::cout << "<u32Keyword : u32> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::u64Keyword:		std::cout << "<u64Keyword : u64> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::f32Keyword:		std::cout << "<f32Keyword : f32> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::f64Keyword:		std::cout << "<f64Keyword : f64> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::charKeyword:	std::cout << "<charKeyword : char> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::boolKeyword:	std::cout << "<boolKeyword : bool> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::falseKeyword:	std::cout << "<falseKeyword : false> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::trueKeyword:	std::cout << "<trueKeyword : true> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::typeKeyword:	std::cout << "<typeKeyword : type> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::funcKeyword:	std::cout << "<funcKeyword : func> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::returnKeyword:	std::cout << "<returnKeyword : return> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::breakKeyword:	std::cout << "<breakKeyword : break> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::ifKeyword:		std::cout << "<ifKeyword : if> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::forKeyword:		std::cout << "<forKeyword : for> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::whileKeyword:	std::cout << "<whileKeyword : while> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::IntLiteral:		std::cout << "<IntLiteral : " << std::get<uint64_t>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::FloatLiteral:	std::cout << "<FloatLiteral : " << std::get<double>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::CharLiteral:	std::cout << "<CharLiteral : TODO IMPLEMENT> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Identifier:		std::cout << "<Identifier : " << std::get<std::string>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Semicolon:		std::cout << "<Semicolon> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Assign:			std::cout << "<Assign> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Invalid:		std::cout << "<Invalid : " << std::get<std::string>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::LessThan:		std::cout << "<LessThan> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::LessThanEq:		std::cout << "<LessThanEq> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::GreaterThan:	std::cout << "<GreaterThan> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::GreaterThanEq:	std::cout << "<GreaterThanEq> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::LogicalNot:		std::cout << "<LogicalNot> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::NotEq:			std::cout << "<NotEq> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Equality:		std::cout << "<Equality> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::OpenParen:		std::cout << "<OpenParen> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::CloseParen:		std::cout << "<CloseParen> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::OpenCurly:		std::cout << "<OpenCurly> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::CloseCurly:		std::cout << "<CloseCurly> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Colon:			std::cout << "<Colon> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Plus:			std::cout << "<Plus> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Minus:			std::cout << "<Minus> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Asterisk:		std::cout << "<Asterisk> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::ForwardSlash:	std::cout << "<ForwardSlash> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Eof:			std::cout << "<EOF> (line " << token.lineNum << ")" << std::endl; break;
 	}
 }
 
@@ -121,7 +127,7 @@ bool Lexer::lexFile(const std::string& filename)
 	fileContents << inFile.rdbuf();
 	fileContents.seekp(fileContents.beg);
 
-	// Lex here, then return true indicating the file was correctly lexed. I.E. a stream of tokens was produces from the source code
+	// Lex here, then return true indicating the file was correctly lexed. I.E. a stream of tokens was produced from the source code
 	while (fileContents)
 	{
 		char current = getChar();
@@ -131,6 +137,9 @@ bool Lexer::lexFile(const std::string& filename)
 		{
 			if (state != LexerState::StartState)
 				emitToken();
+
+			if (current == '\n')
+				lineNum++;
 			
 			continue;
 		}
@@ -207,6 +216,7 @@ void Lexer::emitToken()
 		//}
 	}
 
+	currentToken.lineNum = lineNum;
 	tokens.emplace_back(currentToken);
 	currentLiteral.clear();
 	state = LexerState::StartState;

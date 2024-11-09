@@ -18,7 +18,11 @@ public:
 	void printToken(const Token& token);
 	void reset();
 
+	// Returns the next token in the token stream and advances the tokenIndex pointer
 	Token* getToken();
+
+	// Returns the next token in the token stream but does NOT advance the tokenIndex pointer
+	Token* peek();
 private:
 	char getChar();
 	void ungetChar();
@@ -33,6 +37,7 @@ private:
 	LexerState state;
 	TransitionTable transitionTable;
 	size_t tokenIndex;	// Always points to the next valid token to process
+	uint32_t lineNum;
 
 	std::vector<Token> tokens;
 	std::stringstream fileContents;

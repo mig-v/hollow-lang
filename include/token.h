@@ -73,6 +73,7 @@ struct Token
 {
 	TokenType type;
 	std::variant<char, uint64_t, double, std::string> value;
+	uint32_t lineNum;
 	/*
 	
 	What are possible values of a token?

@@ -66,6 +66,24 @@ TransitionTable::TransitionTable()
 
 	// Invalid -> Invalid (The only way to break out of an invalid token is by whitespace)
 	fillAllEntry(LexerState::InvalidState, LexerState::InvalidState, TokenType::Invalid);
+
+	// CharLiteralState -> CharLiteralState (But overwrite the '\' character to transition into the EscapeSequenceState)
+	fillAllEntry(LexerState::CharLiteralState, LexerState::CharLiteralState, TokenType::CharLiteral);
+	transitions[(int)LexerState::CharLiteralState]['\\'] = { LexerState::EscapeSequenceState, TokenType::CharLiteral };
+
+
+	// EscapeSequenceState -> EscapeSequenceState
+	transitions[(int)LexerState::EscapeSequenceState]['n'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['t'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['b'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['r'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['a'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\"'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\\'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\''] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['0'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['v'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['f'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
 }
 
 void TransitionTable::fillAlphaEntry(LexerState state, LexerState transitionState, TokenType transitionToken)

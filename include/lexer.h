@@ -14,8 +14,14 @@ public:
 	Lexer();
 
 	bool lexFile(const std::string& filename);
+
+	// Mainly for debugging purposes, a simple dump of the lexers token stream
 	void dumpTokens();
+
+	// Prints the type of token passed in as well as its value if applicable
 	void printToken(const Token& token);
+
+	// Resets the lexers internal state. reset() must be called before lexing another file if a file has been previously lexed
 	void reset();
 
 	// Returns the next token in the token stream and advances the tokenIndex pointer
@@ -30,8 +36,15 @@ private:
 	// returns true when a token is complete. This means the most recently read character is a part of the NEXT token, so we need to put it back
 	// onto the string stream
 	bool consumeChar(char current);	
+
+	// Outputs a token to the lexers token stream
 	void emitToken();
+
+	// Checks if the currentLiteral is an identifier or keyword
 	void identifierOrKeyword();
+
+	// Checks if the currentLiteral is a valid escape sequence char, I.E. '\n', '\t', '\\', etc.
+	bool validEscapeSequence();
 
 	Token currentToken;
 	LexerState state;
@@ -43,4 +56,5 @@ private:
 	std::stringstream fileContents;
 	std::string currentLiteral;
 	std::unordered_map<std::string, TokenType> keywords;
+	std::unordered_map<std::string, char> validEscapeChars;
 };

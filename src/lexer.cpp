@@ -31,6 +31,18 @@ Lexer::Lexer()
 	keywords["if"]     = TokenType::ifKeyword;
 	keywords["for"]    = TokenType::forKeyword;
 	keywords["while"]  = TokenType::whileKeyword;
+
+	validEscapeChars["\'\\n'"] = '\n';
+	validEscapeChars["\'\\t'"] = '\t';
+	validEscapeChars["\'\\b'"] = '\b';
+	validEscapeChars["\'\\r'"] = '\r';
+	validEscapeChars["\'\\a'"] = '\a';
+	validEscapeChars["\'\\\"'"] = '\"';
+	validEscapeChars["\'\\\\'"] = '\\';
+	validEscapeChars["\'\\\'\'"] = '\'';
+	validEscapeChars["\'\\0'"] = '\0';
+	validEscapeChars["\'\\v'"] = '\v';
+	validEscapeChars["\'\\f'"] = '\f';
 }
 
 void Lexer::reset()
@@ -89,7 +101,7 @@ void Lexer::printToken(const Token& token)
 		case TokenType::whileKeyword:	std::cout << "<whileKeyword : while> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::IntLiteral:		std::cout << "<IntLiteral : " << std::get<uint64_t>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::FloatLiteral:	std::cout << "<FloatLiteral : " << std::get<double>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
-		case TokenType::CharLiteral:	std::cout << "<CharLiteral : TODO IMPLEMENT> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::CharLiteral:	std::cout << "<CharLiteral : " << std::string(1, std::get<char>(token.value)) << "  |  (char code: " << (int)std::get<char>(token.value) << ")> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Identifier:		std::cout << "<Identifier : " << std::get<std::string>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Semicolon:		std::cout << "<Semicolon> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Assign:			std::cout << "<Assign> (line " << token.lineNum << ")" << std::endl; break;
@@ -207,13 +219,34 @@ void Lexer::emitToken()
 			break;
 		}
 
-		//case LexerState::CharLiteralState:
-		//{
-		//	currentToken.type = TokenType::CharLiteral;
+		case TokenType::CharLiteral:
+		{
+			// Valid char literals should be string of 4 length. I.E. "'a'" -> [', a, ', \0]
+			if (currentLiteral.length() == 4)
+			{
+				currentToken.value = currentLiteral[1];
+			}
+			else
+			{
+				currentToken.type = TokenType::Invalid;
+				currentToken.value.emplace<std::string>(currentLiteral);
+			}
+			break;
+		}
 
-		//	// Need to handle escape char values vs normal char values
-		//	// something like if (type == TokenType::EscapedChar) currentToken.value = currentLiteral
-		//}
+		case TokenType::EscapedCharLiteral:
+		{
+			if (validEscapeSequence())
+			{
+				currentToken.type = TokenType::CharLiteral;
+				currentToken.value = validEscapeChars[currentLiteral];
+			}
+			else
+			{
+				currentToken.type = TokenType::Invalid;
+				currentToken.value.emplace<std::string>(currentLiteral);
+			}
+		}
 	}
 
 	currentToken.lineNum = lineNum;
@@ -221,6 +254,11 @@ void Lexer::emitToken()
 	currentLiteral.clear();
 	state = LexerState::StartState;
 	currentToken.type = TokenType::None;
+}
+
+bool Lexer::validEscapeSequence()
+{
+	return (validEscapeChars.find(currentLiteral) != validEscapeChars.end());
 }
 
 void Lexer::identifierOrKeyword()

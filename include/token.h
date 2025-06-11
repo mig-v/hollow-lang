@@ -35,6 +35,8 @@ enum class TokenType
 	ifKeyword,
 	forKeyword,
 	whileKeyword,
+	elseKeyword,
+	continueKeyword,
 
 	IntLiteral,
 	FloatLiteral,
@@ -51,6 +53,7 @@ enum class TokenType
 
 	Semicolon,
 	Colon,
+	Comma,
 
 	LessThan,
 	GreaterThan,
@@ -65,10 +68,12 @@ enum class TokenType
 	Asterisk,
 	ForwardSlash,
 
-	EscapedCharLiteral,	// Note: This token type is never emitted, it is only here to make lexing escaped chars easier and is later converted to CharLiteral
+	// Note: This token type is never emitted, it is only here to make lexing escaped chars easier and is later converted to CharLiteral
+	EscapedCharLiteral,	
 
 	Invalid,
-	Eof
+	Eof,
+	NumTokens
 };
 
 struct Token

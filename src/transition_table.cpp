@@ -26,6 +26,9 @@ TransitionTable::TransitionTable()
 	// StartState -> ColonState
 	transitions[(int)LexerState::StartState][':'] = { LexerState::ColonState, TokenType::Colon };
 
+	// StartState -> CommaState
+	transitions[(int)LexerState::StartState][','] = { LexerState::CommaState, TokenType::Comma };
+
 	// StartState -> Math Operators
 	transitions[(int)LexerState::StartState]['+'] = { LexerState::PlusState, TokenType::Plus };
 	transitions[(int)LexerState::StartState]['-'] = { LexerState::MinusState, TokenType::Minus };

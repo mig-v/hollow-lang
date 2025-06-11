@@ -3,28 +3,31 @@
 
 #include "lexer.h"
 #include "lexer_tests.h"
+#include "parser.h"
 
 int main()
 {
-	std::cout << "Hello hollow-lang!" << std::endl;
-
 	Lexer lexer;
+	Parser parser;
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	if (lexer.lexFile(LEXER_TESTS_PATH"/operators_test.hollow"))
+	if (lexer.lexFile(TEST_PATH"/parser_tests/example.hollow"))
 	{
 		lexer.dumpTokens();
+		parser.parse(lexer.getTokens());
+		parser.printAST();
+		parser.printErrors();
 	}
 
-	LexerTests tests;
-	tests.runAll();
+	//LexerTests tests;
+	//tests.runAll();
 
-	auto end = std::chrono::high_resolution_clock::now();
+	//auto end = std::chrono::high_resolution_clock::now();
 
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+	//auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-	std::cout << "time taken: " << duration << " (ms)" << std::endl;
+	//std::cout << "time taken: " << duration << " (ms)" << std::endl;
 
 	return 0;
 }

@@ -1,0 +1,10 @@
+type Node
+{
+    test : u8;
+    test2 : u16;
+}
+
+func foo() : void
+{
+    x : u8;
+}

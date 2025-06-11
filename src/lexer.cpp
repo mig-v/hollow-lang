@@ -31,6 +31,8 @@ Lexer::Lexer()
 	keywords["if"]     = TokenType::ifKeyword;
 	keywords["for"]    = TokenType::forKeyword;
 	keywords["while"]  = TokenType::whileKeyword;
+	keywords["else"] = TokenType::elseKeyword;
+	keywords["continue"] = TokenType::continueKeyword;
 
 	validEscapeChars["\'\\n'"] = '\n';
 	validEscapeChars["\'\\t'"] = '\t';
@@ -99,6 +101,8 @@ void Lexer::printToken(const Token& token)
 		case TokenType::ifKeyword:		std::cout << "<ifKeyword : if> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::forKeyword:		std::cout << "<forKeyword : for> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::whileKeyword:	std::cout << "<whileKeyword : while> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::elseKeyword:	std::cout << "<elseKeyword : else> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::continueKeyword:std::cout << "<continueKeyword : continue> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::IntLiteral:		std::cout << "<IntLiteral : " << std::get<uint64_t>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::FloatLiteral:	std::cout << "<FloatLiteral : " << std::get<double>(token.value) << "> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::CharLiteral:	std::cout << "<CharLiteral : " << std::string(1, std::get<char>(token.value)) << "  |  (char code: " << (int)std::get<char>(token.value) << ")> (line " << token.lineNum << ")" << std::endl; break;
@@ -118,6 +122,7 @@ void Lexer::printToken(const Token& token)
 		case TokenType::OpenCurly:		std::cout << "<OpenCurly> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::CloseCurly:		std::cout << "<CloseCurly> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Colon:			std::cout << "<Colon> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Comma:			std::cout << "<Comma> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Plus:			std::cout << "<Plus> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Minus:			std::cout << "<Minus> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Asterisk:		std::cout << "<Asterisk> (line " << token.lineNum << ")" << std::endl; break;

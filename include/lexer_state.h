@@ -14,6 +14,7 @@ enum class LexerState
 	OpenCurlyState,
 	CloseCurlyState,
 	ColonState,
+	CommaState,
 	SemicolonState,
 	AcceptState,
 	InvalidState,

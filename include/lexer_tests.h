@@ -1,8 +1,10 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <string>
 #include <map>
+#include <fstream>
 
 #include <token.h>
 #include "lexer.h"
@@ -17,11 +19,13 @@ class LexerTests
 {
 public:
 	LexerTests();
-
 	void runAll();
-	void runSpecific(const std::string& filename);
 
 private:
+	void runSpecific(const std::string& filename);
+
 	Lexer lexer;
 	std::map<std::string, TestInfo> testSuite;
+	std::array<std::string, (size_t)TokenType::NumTokens> tokenTypeToStr;
+	std::ofstream logFile;
 };

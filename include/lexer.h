@@ -29,6 +29,9 @@ public:
 
 	// Returns the next token in the token stream but does NOT advance the tokenIndex pointer
 	Token* peek();
+
+	// returns the lexers token stream
+	inline std::vector<Token>& getTokens() { return tokens; }
 private:
 	char getChar();
 	void ungetChar();

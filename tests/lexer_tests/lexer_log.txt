@@ -1,0 +1,15 @@
+control_flow_test.hollow
+Test result ... PASSED
+
+function_test.hollow
+Test result ... PASSED
+
+keywords_test.hollow
+Test result ... PASSED
+
+literals_test.hollow
+Test result ... PASSED
+
+operators_test.hollow
+Test result ... PASSED
+

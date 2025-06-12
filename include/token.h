@@ -68,6 +68,16 @@ enum class TokenType
 	Asterisk,
 	ForwardSlash,
 
+	LogicalOr,
+	LogicalAnd,
+
+	BitwiseOr,
+	BitwiseAnd,
+	BitwiseXor,
+	BitwiseNot,
+	BitwiseLeftShift,
+	BitwiseRightShift,
+
 	// Note: This token type is never emitted, it is only here to make lexing escaped chars easier and is later converted to CharLiteral
 	EscapedCharLiteral,	
 

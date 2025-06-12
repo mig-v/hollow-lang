@@ -67,16 +67,26 @@ public:
 	ASTNode* initialization;
 };
 
+class ASTBlock : public ASTNode
+{
+public:
+	ASTBlock() = default;
+
+	void accept(ASTPrinter visitor);
+
+	std::vector<ASTNode*> statements;
+};
+
 class ASTFuncDecl : public ASTNode
 {
 public:
-	ASTFuncDecl(Token funcIdentifier, std::vector<Token>& params, std::vector<ASTNode*>& body);
+	ASTFuncDecl(Token funcIdentifier, std::vector<Token>& params, ASTBlock* body);
 
 	void accept(ASTPrinter visitor);
 
 	Token funcIdentifier;
+	ASTBlock* body;
 	std::vector<Token> params;
-	std::vector<ASTNode*> body;
 };
 
 class ASTVarAccess : public ASTNode
@@ -108,4 +118,95 @@ public:
 
 	Token identifier;
 	ASTNode* value;
+};
+
+class ASTReturn : public ASTNode
+{
+public:
+	ASTReturn(ASTNode* returnVal);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* returnVal;
+};
+
+class ASTForLoop : public ASTNode
+{
+public:
+	ASTForLoop(ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTBlock* body);
+
+	void accept(ASTPrinter visitor);
+	
+	ASTNode* initializer;
+	ASTNode* condition;
+	ASTNode* increment;
+	ASTBlock* body;
+};
+
+class ASTIfStatement : public ASTNode
+{
+public:
+	ASTIfStatement(ASTNode* condition, ASTNode* trueBranch, ASTNode* falseBranch);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* condition;
+	ASTNode* trueBranch;
+	ASTNode* falseBranch;
+};
+
+class ASTLogical : public ASTNode
+{
+public:
+	ASTLogical(ASTNode* lhs, Token logicalOperator, ASTNode* rhs);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* lhs;
+	Token logicalOperator;
+	ASTNode* rhs;
+};
+
+class ASTBinaryExpr : public ASTNode
+{
+public:
+	ASTBinaryExpr(ASTNode* lhs, Token op, ASTNode* rhs);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* lhs;
+	Token op;
+	ASTNode* rhs;
+};
+
+class ASTUnaryExpr : public ASTNode
+{
+public:
+	ASTUnaryExpr(Token op, ASTNode* expr);
+
+	void accept(ASTPrinter visitor);
+
+	Token op;
+	ASTNode* expr;
+};
+
+class ASTCall : public ASTNode
+{
+public:
+	ASTCall(ASTNode* callee, std::vector<ASTNode*>& args);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* callee;
+	std::vector<ASTNode*> args;
+};
+
+class ASTGroupExpr : public ASTNode
+{
+public:
+	ASTGroupExpr(ASTNode* expr);
+
+	void accept(ASTPrinter visitor);
+
+	ASTNode* expr;
 };

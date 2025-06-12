@@ -21,9 +21,22 @@ private:
 	ASTNode* funcDecl();
 	ASTNode* statement();
 	ASTNode* expressionStatement();
+	ASTNode* forStatement();
+	ASTNode* ifStatement();
+	ASTBlock* block();
+	ASTNode* returnStatement();
 
 	ASTNode* expression();
 	ASTNode* assignment();
+	ASTNode* logicalOr();
+	ASTNode* logicalAnd();
+	ASTNode* equality();
+	ASTNode* comparison();
+	ASTNode* term();
+	ASTNode* factor();
+	ASTNode* unary();
+	ASTNode* call();
+	ASTNode* parseFuncArgs(ASTNode* callee);
 
 	// ...
 

@@ -17,4 +17,13 @@ public:
 	void visitVarAccess(ASTVarAccess& node);
 	void visitExprStmt(ASTExprStmt& node);
 	void visitAssign(ASTAssign& node);
+	void visitReturn(ASTReturn& node);
+	void visitBlock(ASTBlock& node);
+	void visitForLoop(ASTForLoop& node);
+	void visitIfStatement(ASTIfStatement& node);
+	void visitLogical(ASTLogical& node);
+	void visitBinaryExpr(ASTBinaryExpr& node);
+	void visitUnaryExpr(ASTUnaryExpr& node);
+	void visitCall(ASTCall& node);
+	void visitGroupExpr(ASTGroupExpr& node);
 };

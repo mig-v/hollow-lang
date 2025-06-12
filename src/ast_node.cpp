@@ -85,11 +85,11 @@ void ASTVarDecl::accept(ASTPrinter visitor)
 	visitor.visitVarDecl(*this);
 }
 
-ASTFuncDecl::ASTFuncDecl(Token funcIdentifier, std::vector<Token>& params, std::vector<ASTNode*>& body)
+ASTFuncDecl::ASTFuncDecl(Token funcIdentifier, std::vector<Token>& params, ASTBlock* body)
 {
 	this->funcIdentifier = funcIdentifier;
 	this->params = std::move(params);
-	this->body = std::move(body);
+	this->body = body;
 }
 
 void ASTFuncDecl::accept(ASTPrinter visitor)
@@ -126,4 +126,100 @@ ASTAssign::ASTAssign(Token identifier, ASTNode* value)
 void ASTAssign::accept(ASTPrinter visitor)
 {
 	visitor.visitAssign(*this);
+}
+
+ASTReturn::ASTReturn(ASTNode* returnVal)
+{
+	this->returnVal = returnVal;
+}
+
+void ASTReturn::accept(ASTPrinter visitor)
+{
+	visitor.visitReturn(*this);
+}
+
+void ASTBlock::accept(ASTPrinter visitor)
+{
+	visitor.visitBlock(*this);
+}
+
+ASTForLoop::ASTForLoop(ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTBlock* body)
+{
+	this->initializer = initializer;
+	this->condition = condition;
+	this->increment = increment;
+	this->body = body;
+}
+
+void ASTForLoop::accept(ASTPrinter visitor)
+{
+	visitor.visitForLoop(*this);
+}
+
+ASTIfStatement::ASTIfStatement(ASTNode* condition, ASTNode* trueBranch, ASTNode* falseBranch)
+{
+	this->condition = condition;
+	this->trueBranch = trueBranch;
+	this->falseBranch = falseBranch;
+}
+
+void ASTIfStatement::accept(ASTPrinter visitor)
+{
+	visitor.visitIfStatement(*this);
+}
+
+ASTLogical::ASTLogical(ASTNode* lhs, Token logicalOperator, ASTNode* rhs)
+{
+	this->lhs = lhs;
+	this->logicalOperator;
+	this->rhs = rhs;
+}
+
+void ASTLogical::accept(ASTPrinter visitor)
+{
+	visitor.visitLogical(*this);
+}
+
+ASTBinaryExpr::ASTBinaryExpr(ASTNode* lhs, Token op, ASTNode* rhs)
+{
+	this->lhs = lhs;
+	this->op = op;
+	this->rhs = rhs;
+}
+
+void ASTBinaryExpr::accept(ASTPrinter visitor)
+{
+	visitor.visitBinaryExpr(*this);
+}
+
+ASTUnaryExpr::ASTUnaryExpr(Token op, ASTNode* expr)
+{
+	this->op = op;
+	this->expr = expr;
+}
+
+void ASTUnaryExpr::accept(ASTPrinter visitor)
+{
+	visitor.visitUnaryExpr(*this);
+}
+
+ASTCall::ASTCall(ASTNode* callee, std::vector<ASTNode*>& args)
+{
+	this->callee = callee;
+	this->args = std::move(args);
+}
+
+void ASTCall::accept(ASTPrinter visitor)
+{
+	visitor.visitCall(*this);
+}
+
+ASTGroupExpr::ASTGroupExpr(ASTNode* expr)
+{
+	this->expr = expr;
+}
+
+void ASTGroupExpr::accept(ASTPrinter visitor)
+{
+	visitor.visitGroupExpr(*this);
 }

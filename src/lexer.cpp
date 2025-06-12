@@ -127,6 +127,14 @@ void Lexer::printToken(const Token& token)
 		case TokenType::Minus:			std::cout << "<Minus> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Asterisk:		std::cout << "<Asterisk> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::ForwardSlash:	std::cout << "<ForwardSlash> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::LogicalAnd:     std::cout << "<LogicalAnd> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::LogicalOr:      std::cout << "<LogicalOr> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseAnd:     std::cout << "<BitwiseAnd> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseOr:      std::cout << "<BitwiseOr> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseXor:     std::cout << "<BitwiseXor> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseNot:     std::cout << "<BitwiseNot> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseLeftShift: std::cout << "<BitwiseLeftShift> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseRightShift: std::cout << "<BitwiseRightShift> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Eof:			std::cout << "<EOF> (line " << token.lineNum << ")" << std::endl; break;
 	}
 }

@@ -12,12 +12,12 @@ int main()
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	if (lexer.lexFile(TEST_PATH"/parser_tests/example.hollow"))
+	if (lexer.lexFile(TEST_PATH"/lexer_tests/operators_test.hollow"))
 	{
 		lexer.dumpTokens();
-		parser.parse(lexer.getTokens());
-		parser.printAST();
-		parser.printErrors();
+		//parser.parse(lexer.getTokens());
+		//parser.printAST();
+		//parser.printErrors();
 	}
 
 	//LexerTests tests;

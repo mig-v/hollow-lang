@@ -35,6 +35,12 @@ TransitionTable::TransitionTable()
 	transitions[(int)LexerState::StartState]['*'] = { LexerState::AsteriskState, TokenType::Asterisk };
 	transitions[(int)LexerState::StartState]['/'] = { LexerState::ForwardSlashState, TokenType::ForwardSlash };
 
+	// StartState -> Bitwise Operators
+	transitions[(int)LexerState::StartState]['&'] = { LexerState::BitwiseAndState, TokenType::BitwiseAnd };
+	transitions[(int)LexerState::StartState]['|'] = { LexerState::BitwiseOrState, TokenType::BitwiseOr };
+	transitions[(int)LexerState::StartState]['^'] = { LexerState::BitwiseXorState, TokenType::BitwiseXor };
+	transitions[(int)LexerState::StartState]['~'] = { LexerState::BitwiseNotState, TokenType::BitwiseNot };
+
 	// StartState -> Open / Close Paren and Curly State
 	transitions[(int)LexerState::StartState]['('] = { LexerState::OpenParenState, TokenType::OpenParen };
 	transitions[(int)LexerState::StartState][')'] = { LexerState::CloseParenState, TokenType::CloseParen };
@@ -51,7 +57,11 @@ TransitionTable::TransitionTable()
 	transitions[(int)LexerState::GreaterThanState]['='] = { LexerState::GreaterThanEqState, TokenType::GreaterThanEq };
 	transitions[(int)LexerState::LogicalNotState]['='] = { LexerState::NotEqState, TokenType::NotEq };
 	transitions[(int)LexerState::AssignState]['='] = { LexerState::EqualityState, TokenType::Equality };
-
+	transitions[(int)LexerState::LessThanState]['<'] = { LexerState::BitwiseLeftShiftState, TokenType::BitwiseLeftShift };
+	transitions[(int)LexerState::GreaterThanState]['>'] = { LexerState::BitwiseRightShiftState, TokenType::BitwiseRightShift };
+	transitions[(int)LexerState::BitwiseAndState]['&'] = { LexerState::LogicalAndState, TokenType::LogicalAnd };
+	transitions[(int)LexerState::BitwiseOrState]['|'] = { LexerState::LogicalOrState, TokenType::LogicalOr };
+	
 	// IdentifierKeywordState -> IdentifierKeywordState
 	fillAlphaEntry(LexerState::IdentifierKeywordState, LexerState::IdentifierKeywordState, TokenType::Identifier);
 	fillDigitEntry(LexerState::IdentifierKeywordState, LexerState::IdentifierKeywordState, TokenType::Identifier);

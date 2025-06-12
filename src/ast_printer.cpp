@@ -100,3 +100,125 @@ void ASTPrinter::visitAssign(ASTAssign& node)
 	std::cout << "[Assign Node] " << std::get<std::string>(node.identifier.value) << " = ";
 	node.value->accept(*this);
 }
+
+void ASTPrinter::visitReturn(ASTReturn& node)
+{
+	std::cout << "[Return Node] return value = ";
+
+	// the return value can be null if the function returns void
+	if (node.returnVal)
+		node.returnVal->accept(*this);
+	else
+		std::cout << "void\n";
+}
+
+void ASTPrinter::visitBlock(ASTBlock& node)
+{
+	std::cout << "[Block Node Start]\n";
+
+	for (ASTNode* statement : node.statements)
+		statement->accept(*this);
+
+	std::cout << "[Block Node End]\n";
+}
+
+void ASTPrinter::visitForLoop(ASTForLoop& node)
+{
+	std::cout << "[For Loop Node]\ninitializer = ";
+
+	if (node.initializer)
+		node.initializer->accept(*this);
+	else
+		std::cout << "(null)\n";
+
+	std::cout << "condition = ";
+	if (node.condition)
+		node.condition->accept(*this);
+	else
+		std::cout << "(null)\n";
+
+	std::cout << "increment = ";
+	if (node.increment)
+		node.increment->accept(*this);
+	else
+		std::cout << "(null)\n";
+
+	node.body->accept(*this);
+}
+
+void ASTPrinter::visitIfStatement(ASTIfStatement& node)
+{
+	std::cout << "[If Statement Node]\n\tcondition = ";
+	node.condition->accept(*this);
+
+	std::cout << "\tTrue Branch = ";
+	node.trueBranch->accept(*this);
+
+	std::cout << "\tFalse Branch = ";
+	if (node.falseBranch)
+		node.falseBranch->accept(*this);
+	else
+		std::cout << "(no false branch)\n";
+}
+
+void ASTPrinter::visitLogical(ASTLogical& node)
+{
+	std::cout << "[Logical Node]\n\tlhs = ";
+	node.lhs->accept(*this);
+
+	std::cout << "\trhs = ";
+	if (node.rhs)
+		node.rhs->accept(*this);
+	else
+		std::cout << "(no rhs)\n";
+}
+
+void ASTPrinter::visitBinaryExpr(ASTBinaryExpr& node)
+{
+	std::cout << "[Binary Expr Node]\n\tlhs = ";
+	node.lhs->accept(*this);
+
+	switch (node.op.type)
+	{
+		case TokenType::Plus:         std::cout << "\toperator = +\n"; break;
+		case TokenType::Minus:        std::cout << "\toperator = -\n"; break;
+		case TokenType::Asterisk:     std::cout << "\toperator = *\n"; break;
+		case TokenType::ForwardSlash: std::cout << "\toperator = /\n"; break;
+	}
+
+	std::cout << "\trhs = ";
+	node.rhs->accept(*this);
+}
+
+void ASTPrinter::visitUnaryExpr(ASTUnaryExpr& node)
+{
+	std::cout << "[Unary Expr Node]\n";
+	
+	switch (node.op.type)
+	{
+		case TokenType::LogicalNot: std::cout << "\top = !\n"; break;
+		case TokenType::Minus:      std::cout << "\top = -\n"; break;
+	}
+
+	std::cout << "\texpression = ";
+	node.expr->accept(*this);
+}
+
+void ASTPrinter::visitCall(ASTCall& node)
+{
+	std::cout << "[Call Node]\n\tcallee = ";
+	node.callee->accept(*this);
+	
+	std::cout << "[Args Start]\n";
+
+	for (ASTNode* arg : node.args)
+		arg->accept(*this);
+
+	std::cout << "[Args End]\n";
+}
+
+void ASTPrinter::visitGroupExpr(ASTGroupExpr& node)
+{
+	std::cout << "[Group Expr Node] --> ";
+	node.expr->accept(*this);
+}

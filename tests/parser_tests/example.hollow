@@ -7,3 +7,10 @@ x : u8;
 y : u8 = x;
 y = 10;
 x = y;
+return 10;
+return;
+
+for (i : u8 = 0; i < 100; i)
+{
+
+}

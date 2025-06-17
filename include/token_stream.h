@@ -21,6 +21,7 @@ public:
 	bool tokensInStream();		// returns true if there are still tokens in the stream
 	bool matchToken(std::initializer_list<TokenType> list);	// returns true if the top token matches any of the token types in 'list', false otherwise
 	bool topIsPrimitive();		// returns true if the top token is a primitive type, [u8 ... u64, i8 ... i64, f32, f64, char, bool]
+	bool topIsAssignment();		// returns true if the top token is an assignment operator, [=, +=, -=, *=, /=, &=, |=, ^=, <<=, >>=]
 private:
 	std::vector<Token> tokens;
 	size_t current;

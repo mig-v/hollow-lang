@@ -3,8 +3,11 @@
 #include <vector>
 
 #include "ast_node.h"
+#include "ast_expr.h"
+#include "ast_stmt.h"
 #include "token_stream.h"
 #include "error_report.h"
+#include "memory_arena.h"
 
 class Parser
 {
@@ -12,42 +15,50 @@ public:
 	Parser() = default;
 
 	void parse(std::vector<Token>& tokens);
+	void reset();
 	void printAST();
 	void printErrors();
 
+	inline const std::vector<ASTNode*>& getAst() const { return ast; }
+
 private:
-	ASTNode* declaration();
-	ASTNode* varDecl();
-	ASTNode* funcDecl();
-	ASTNode* statement();
-	ASTNode* expressionStatement();
-	ASTNode* forStatement();
-	ASTNode* ifStatement();
+	ASTStmt* declaration();
+	ASTStmt* varDecl();
+	ASTStmt* funcDecl();
+	ASTStmt* statement();
+	ASTStmt* forStatement();
+	ASTStmt* ifStatement();
 	ASTBlock* block();
-	ASTNode* returnStatement();
+	ASTStmt* returnStatement();
+	ASTStmt* expressionStatement();
 
-	ASTNode* expression();
-	ASTNode* assignment();
-	ASTNode* logicalOr();
-	ASTNode* logicalAnd();
-	ASTNode* equality();
-	ASTNode* comparison();
-	ASTNode* term();
-	ASTNode* factor();
-	ASTNode* unary();
-	ASTNode* call();
-	ASTNode* parseFuncArgs(ASTNode* callee);
+	ASTExpr* expression();
+	ASTExpr* assignment();
+	ASTExpr* logicalOr();
+	ASTExpr* logicalAnd();
+	ASTExpr* bitwiseOr();
+	ASTExpr* bitwiseXor();
+	ASTExpr* bitwiseAnd();
+	ASTExpr* equality();
+	ASTExpr* comparison();
+	ASTExpr* bitwiseShift();
+	ASTExpr* term();
+	ASTExpr* factor();
+	ASTExpr* unary();
+	ASTExpr* postfix();
+	ASTExpr* primary();
 
-	// ...
-
-	ASTNode* primary();
+	ASTExpr* parseFuncArgs(ASTNode* callee);
+	ASTParamList* parseFuncParams();
 
 	void assertCurrent(TokenType type, const std::string& errorMsg);	// assert the top token matches 'type', otherwise report a syntax error
 	void assertCurrentIsType(const std::string& errorMsg);
 	void throwError(const std::string& errorMsg);
 	void synchronize();
 
+	MemoryArena arena;
 	TokenStream tokenStream;
+
 	std::vector<ASTNode*> ast;
 	std::vector<ErrorReport> parseErrors;
 

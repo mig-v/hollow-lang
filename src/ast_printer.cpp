@@ -1,58 +1,12 @@
 #include <iostream>
 
 #include "ast_printer.h"
-
-//void ASTPrinter::visitUnsignedLiteral(ASTUnsignedLiteral& node)
-//{
-//	switch (node.type)
-//	{
-//		case TokenType::u8Keyword:
-//			std::cout << "[Unsigned Literal Node] u8 = ";
-//			break;
-//		case TokenType::u16Keyword:
-//			std::cout << "[Unsigned Literal Node] u16 = ";
-//			break;
-//		case TokenType::u32Keyword:
-//			std::cout << "[Unsigned Literal Node] u32 = ";
-//			break;
-//		case TokenType::u64Keyword:
-//			std::cout << "[Unsigned Literal Node] u64 = ";
-//			break;
-//	}
-//
-//	std::cout << node.value << std::endl;
-//}
-//
-//void ASTPrinter::visitSignedLiteral(ASTSignedLiteral& node)
-//{
-//	switch (node.type)
-//	{
-//		case TokenType::i8Keyword:
-//			std::cout << "[Signed Literal Node] i8 = ";
-//			break;
-//		case TokenType::i16Keyword:
-//			std::cout << "[Signed Literal Node] i16 = ";
-//			break;
-//		case TokenType::i32Keyword:
-//			std::cout << "[Signed Literal Node] i32 = ";
-//			break;
-//		case TokenType::i64Keyword:
-//			std::cout << "[Signed Literal Node] i64 = ";
-//			break;
-//	}
-//
-//	std::cout << node.value << std::endl;
-//}
+#include "debug_utils.h"
 
 void ASTPrinter::visitIntLiteral(ASTIntLiteral& node)
 {
 	std::cout << "[Int Literal Node] = " << node.value << std::endl;
 }
-
-//void ASTPrinter::visitFloatLiteral(ASTFloatLiteral& node)
-//{
-//	std::cout << "[Float Literal Node] f32 = " << node.value << std::endl;
-//}
 
 void ASTPrinter::visitDoubleLiteral(ASTDoubleLiteral& node)
 {
@@ -71,20 +25,24 @@ void ASTPrinter::visitBoolLiteral(ASTBoolLiteral& node)
 
 void ASTPrinter::visitVarDecl(ASTVarDecl& node)
 {
-	std::cout << "[Var Decl Node] " << std::get<std::string>(node.varIdentifier.value) << " = ";
+	std::cout << "[Var Decl Node] : " << std::get<std::string>(node.varIdentifier.value) << "\n\tinitializer: ";
 
 	if (node.initialization)
 		node.initialization->accept(*this);
 	else
 		std::cout << "(null initializer)\n";
+
+	if (node.typeInfo)
+		std::cout << "\ttype: " << DebugUtils::typeKindToString(node.typeInfo->type) << " scope: " << node.scope << " slot index : " << node.slotIndex << std::endl;
 }
 
 void ASTPrinter::visitFuncDecl(ASTFuncDecl& node)
 {
 	std::cout << "[Func Decl Node] Function name: " << std::get<std::string>(node.funcIdentifier.value) << std::endl;
+	node.params->accept(*this);
 }
 
-void ASTPrinter::visitVarAccess(ASTVarAccess& node)
+void ASTPrinter::visitVariable(ASTVariable& node)
 {
 	std::cout << "[Var Access Node] Variable name: " << std::get<std::string>(node.identifier.value) << std::endl;
 }
@@ -180,10 +138,16 @@ void ASTPrinter::visitBinaryExpr(ASTBinaryExpr& node)
 
 	switch (node.op.type)
 	{
-		case TokenType::Plus:         std::cout << "\toperator = +\n"; break;
-		case TokenType::Minus:        std::cout << "\toperator = -\n"; break;
-		case TokenType::Asterisk:     std::cout << "\toperator = *\n"; break;
-		case TokenType::ForwardSlash: std::cout << "\toperator = /\n"; break;
+		case TokenType::Plus:          std::cout << "\toperator: +\n"; break;
+		case TokenType::Minus:         std::cout << "\toperator: -\n"; break;
+		case TokenType::Asterisk:      std::cout << "\toperator: *\n"; break;
+		case TokenType::ForwardSlash:  std::cout << "\toperator: /\n"; break;
+		case TokenType::NotEq:         std::cout << "\toperator: !=\n"; break;
+		case TokenType::Equality:      std::cout << "\toperator: ==\n"; break;
+		case TokenType::GreaterThan:   std::cout << "\toperator: >\n"; break;
+		case TokenType::GreaterThanEq: std::cout << "\toperator: >=\n"; break;
+		case TokenType::LessThan:      std::cout << "\toperator: <\n"; break;
+		case TokenType::LessThanEq:    std::cout << "\toperator: <=\n"; break;
 	}
 
 	std::cout << "\trhs = ";
@@ -211,7 +175,7 @@ void ASTPrinter::visitCall(ASTCall& node)
 	
 	std::cout << "[Args Start]\n";
 
-	for (ASTNode* arg : node.args)
+	for (ASTArgument* arg : node.args->args)
 		arg->accept(*this);
 
 	std::cout << "[Args End]\n";
@@ -221,4 +185,70 @@ void ASTPrinter::visitGroupExpr(ASTGroupExpr& node)
 {
 	std::cout << "[Group Expr Node] --> ";
 	node.expr->accept(*this);
+}
+
+void ASTPrinter::visitPostfix(ASTPostfix& node)
+{
+	std::cout << "[Postfix Node] --> ";
+
+	switch (node.op.type)
+	{
+		case TokenType::Increment: std::cout << "op = ++ "; break;
+		case TokenType::Decrement: std::cout << "op = -- "; break;
+	}
+
+	std::cout << " expr: ";
+	node.expr->accept(*this);
+}
+
+void ASTPrinter::visitParameter(ASTParameter& node)
+{
+	std::cout << "[Parameter Node] Identifier : "
+		<< std::get<std::string>(node.paramIdentifier.value);
+		
+	switch (node.paramType.type)
+	{
+		case TokenType::u8Keyword:   std::cout << " Type: u8\n";   break;
+		case TokenType::u16Keyword:  std::cout << " Type: u16\n";  break;
+		case TokenType::u32Keyword:  std::cout << " Type: u32\n";  break;
+		case TokenType::u64Keyword:  std::cout << " Type: u64\n";  break;
+		case TokenType::i8Keyword:   std::cout << " Type: i8\n";   break;
+		case TokenType::i16Keyword:  std::cout << " Type: i16\n";  break;
+		case TokenType::i32Keyword:  std::cout << " Type: i32\n";  break;
+		case TokenType::i64Keyword:  std::cout << " Type: i64\n";  break;
+		case TokenType::f32Keyword:  std::cout << " Type: f32\n";  break;
+		case TokenType::f64Keyword:  std::cout << " Type: f64\n";  break;
+		case TokenType::charKeyword: std::cout << " Type: char\n"; break;
+		case TokenType::boolKeyword: std::cout << " Type: bool\n"; break;
+
+		// if the type token isn't a built in type, then its a user defined type so it will be stored in the tokens std::variant<std::string> value
+		default:
+			std::cout << " Type : " << std::get<std::string>(node.paramType.value) << std::endl;
+	}
+}
+
+void ASTPrinter::visitArgument(ASTArgument& node)
+{
+	std::cout << "[Argument Node] value : ";
+	node.value->accept(*this);
+}
+
+void ASTPrinter::visitParamList(ASTParamList& node)
+{
+	std::cout << "[Params Start]\n";
+
+	for (ASTParameter* param : node.params)
+		param->accept(*this);
+
+	std::cout << "[Params End]\n";
+}
+
+void ASTPrinter::visitArgList(ASTArgList& node)
+{
+	std::cout << "[Args Start]\n";
+
+	for (ASTArgument* arg: node.args)
+		arg->accept(*this);
+
+	std::cout << "[Args End]\n";
 }

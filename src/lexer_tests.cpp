@@ -131,6 +131,7 @@ void LexerTests::runAll()
 {	
 	logFile.open(TEST_PATH"/lexer_tests/lexer_log.txt");
 
+	std::cout << "===== Running Lexer Test Suite =====\n";
 	for (auto const& [key, val] : testSuite)
 		runSpecific(key);
 
@@ -146,9 +147,6 @@ void LexerTests::runSpecific(const std::string& filename)
 
 	lexer.reset();
 	lexer.lexFile(filename);
-
-	if (logFile.is_open())
-		logFile << testSuite[filename].testname << std::endl;
 
 	for (size_t i = 0; i < expectedTokenCount; i++)
 	{
@@ -172,13 +170,13 @@ void LexerTests::runSpecific(const std::string& filename)
 		std::cout << testSuite[filename].testname << " ... PASSED" << std::endl;
 
 		if (logFile.is_open())
-			logFile << "Test result ... PASSED" << std::endl << std::endl;
+			logFile << testSuite[filename].testname << " ... PASSED" << std::endl << std::endl;
 	}
 	else
 	{
 		std::cout << testSuite[filename].testname << " ... FAILED" << std::endl;
 
 		if (logFile.is_open())
-			logFile << "Test result ... FAILED" << std::endl << std::endl;
+			logFile << testSuite[filename].testname << " ... FAILED" << std::endl << std::endl;
 	}
 }

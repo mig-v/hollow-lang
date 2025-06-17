@@ -29,6 +29,9 @@ TransitionTable::TransitionTable()
 	// StartState -> CommaState
 	transitions[(int)LexerState::StartState][','] = { LexerState::CommaState, TokenType::Comma };
 
+	// StartState -> DotOperatorState
+	transitions[(int)LexerState::StartState]['.'] = { LexerState::DotOperatorState, TokenType::DotOperator };
+
 	// StartState -> Math Operators
 	transitions[(int)LexerState::StartState]['+'] = { LexerState::PlusState, TokenType::Plus };
 	transitions[(int)LexerState::StartState]['-'] = { LexerState::MinusState, TokenType::Minus };
@@ -41,18 +44,20 @@ TransitionTable::TransitionTable()
 	transitions[(int)LexerState::StartState]['^'] = { LexerState::BitwiseXorState, TokenType::BitwiseXor };
 	transitions[(int)LexerState::StartState]['~'] = { LexerState::BitwiseNotState, TokenType::BitwiseNot };
 
-	// StartState -> Open / Close Paren and Curly State
+	// StartState -> Open / Close Paren, Curly , and Bracket State
 	transitions[(int)LexerState::StartState]['('] = { LexerState::OpenParenState, TokenType::OpenParen };
 	transitions[(int)LexerState::StartState][')'] = { LexerState::CloseParenState, TokenType::CloseParen };
 	transitions[(int)LexerState::StartState]['{'] = { LexerState::OpenCurlyState, TokenType::OpenCurly };
 	transitions[(int)LexerState::StartState]['}'] = { LexerState::CloseCurlyState, TokenType::CloseCurly };
+	transitions[(int)LexerState::StartState]['['] = { LexerState::OpenBracketState, TokenType::OpenBracket };
+	transitions[(int)LexerState::StartState][']'] = { LexerState::CloseBracketState, TokenType::CloseBracket };
 
 	// StartState -> LessThanState, GreaterThanState, LogicalNotState  (Single Character Comparison Operators)
 	transitions[(int)LexerState::StartState]['<'] = { LexerState::LessThanState, TokenType::LessThan };
 	transitions[(int)LexerState::StartState]['>'] = { LexerState::GreaterThanState, TokenType::GreaterThan };
 	transitions[(int)LexerState::StartState]['!'] = { LexerState::LogicalNotState, TokenType::LogicalNot };
 
-	// Single character operators -> double character operators (< : <=, > : >=, ! : !=)
+	// Single character operators -> double character operators (<=, >=, !=, ==, <<, >>, &&, ||, ++, --)
 	transitions[(int)LexerState::LessThanState]['='] = { LexerState::LessThanEqState, TokenType::LessThanEq };
 	transitions[(int)LexerState::GreaterThanState]['='] = { LexerState::GreaterThanEqState, TokenType::GreaterThanEq };
 	transitions[(int)LexerState::LogicalNotState]['='] = { LexerState::NotEqState, TokenType::NotEq };
@@ -61,7 +66,23 @@ TransitionTable::TransitionTable()
 	transitions[(int)LexerState::GreaterThanState]['>'] = { LexerState::BitwiseRightShiftState, TokenType::BitwiseRightShift };
 	transitions[(int)LexerState::BitwiseAndState]['&'] = { LexerState::LogicalAndState, TokenType::LogicalAnd };
 	transitions[(int)LexerState::BitwiseOrState]['|'] = { LexerState::LogicalOrState, TokenType::LogicalOr };
-	
+	transitions[(int)LexerState::PlusState]['+'] = { LexerState::IncrementState, TokenType::Increment };
+	transitions[(int)LexerState::MinusState]['-'] = { LexerState::DecrementState, TokenType::Decrement };
+	transitions[(int)LexerState::PlusState]['='] = { LexerState::PlusEqualsState, TokenType::PlusEquals };
+	transitions[(int)LexerState::MinusState]['='] = { LexerState::MinusEqualsState, TokenType::MinusEquals };
+	transitions[(int)LexerState::AsteriskState]['='] = { LexerState::TimesEqualsState, TokenType::TimesEquals };
+	transitions[(int)LexerState::ForwardSlashState]['='] = { LexerState::DividedEqualsState, TokenType::DividedEquals };
+
+	// Bitwise compound assignment operators
+	transitions[(int)LexerState::BitwiseAndState]['='] = { LexerState::BitwiseAndEqualsState, TokenType::BitwiseAndEquals };
+	transitions[(int)LexerState::BitwiseOrState]['='] = { LexerState::BitwiseOrEqualsState, TokenType::BitwiseOrEquals };
+	transitions[(int)LexerState::BitwiseXorState]['='] = { LexerState::BitwiseXorEqualsState, TokenType::BitwiseXorEquals };
+	transitions[(int)LexerState::BitwiseLeftShiftState]['='] = { LexerState::BitwiseLeftShiftEqualsState, TokenType::BitwiseLeftShiftEquals };
+	transitions[(int)LexerState::BitwiseRightShiftState]['='] = { LexerState::BitwiseRightShiftEqualsState, TokenType::BitwiseRightShiftEquals };
+
+	// Transition from dot operator to float literal state to allow stuff like f32 f = .100;
+	fillDigitEntry(LexerState::DotOperatorState, LexerState::FloatLiteralState, TokenType::FloatLiteral);
+
 	// IdentifierKeywordState -> IdentifierKeywordState
 	fillAlphaEntry(LexerState::IdentifierKeywordState, LexerState::IdentifierKeywordState, TokenType::Identifier);
 	fillDigitEntry(LexerState::IdentifierKeywordState, LexerState::IdentifierKeywordState, TokenType::Identifier);
@@ -83,20 +104,25 @@ TransitionTable::TransitionTable()
 	// CharLiteralState -> CharLiteralState (But overwrite the '\' character to transition into the EscapeSequenceState)
 	fillAllEntry(LexerState::CharLiteralState, LexerState::CharLiteralState, TokenType::CharLiteral);
 	transitions[(int)LexerState::CharLiteralState]['\\'] = { LexerState::EscapeSequenceState, TokenType::CharLiteral };
+	transitions[(int)LexerState::CharLiteralState]['\''] = { LexerState::EndCharLiteralState, TokenType::CharLiteral };
 
-
+	fillAllEntry(LexerState::EndCharLiteralState, LexerState::AcceptState, TokenType::CharLiteral);
+	
 	// EscapeSequenceState -> EscapeSequenceState
-	transitions[(int)LexerState::EscapeSequenceState]['n'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['t'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['b'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['r'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['a'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['\"'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['\\'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['\''] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['0'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['v'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
-	transitions[(int)LexerState::EscapeSequenceState]['f'] = { LexerState::EscapeSequenceState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['n'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['t'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['b'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['r'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['a'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\"'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\\'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['\''] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['0'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['v'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+	transitions[(int)LexerState::EscapeSequenceState]['f'] = { LexerState::ConsumeEscapedCharState, TokenType::EscapedCharLiteral };
+
+	transitions[(int)LexerState::ConsumeEscapedCharState]['\''] = { LexerState::EndEscapeSequenceState, TokenType::EscapedCharLiteral };
+	fillAllEntry(LexerState::EndEscapeSequenceState, LexerState::AcceptState, TokenType::EscapedCharLiteral);
 }
 
 void TransitionTable::fillAlphaEntry(LexerState state, LexerState transitionState, TokenType transitionToken)

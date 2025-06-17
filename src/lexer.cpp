@@ -133,8 +133,22 @@ void Lexer::printToken(const Token& token)
 		case TokenType::BitwiseOr:      std::cout << "<BitwiseOr> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::BitwiseXor:     std::cout << "<BitwiseXor> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::BitwiseNot:     std::cout << "<BitwiseNot> (line " << token.lineNum << ")" << std::endl; break;
-		case TokenType::BitwiseLeftShift: std::cout << "<BitwiseLeftShift> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseLeftShift:  std::cout << "<BitwiseLeftShift> (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::BitwiseRightShift: std::cout << "<BitwiseRightShift> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Increment:         std::cout << "<Increment ++> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::Decrement:         std::cout << "<Decrement --> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::PlusEquals:        std::cout << "<PlusEquals +=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::MinusEquals:       std::cout << "<MinusEquals -=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::TimesEquals:       std::cout << "<TimesEquals *=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::DividedEquals:     std::cout << "<DividedEquals /=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::DotOperator:     std::cout << "<DotOperator .> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::OpenBracket:     std::cout << "<OpenBracket [> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::CloseBracket:     std::cout << "<CloseBracket ]> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseAndEquals:     std::cout << "<BitwiseAndEquals &=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseOrEquals:     std::cout << "<BitwiseOrEquals |=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseXorEquals:        std::cout << "<BitwiseXorEquals ^=> (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseLeftShiftEquals:  std::cout << "<BitwiseLeftShiftEquals <<= > (line " << token.lineNum << ")" << std::endl; break;
+		case TokenType::BitwiseRightShiftEquals: std::cout << "<BitwiseRightShiftEquals >>= > (line " << token.lineNum << ")" << std::endl; break;
 		case TokenType::Eof:			std::cout << "<EOF> (line " << token.lineNum << ")" << std::endl; break;
 	}
 }
@@ -234,8 +248,8 @@ void Lexer::emitToken()
 
 		case TokenType::CharLiteral:
 		{
-			// Valid char literals should be string of 4 length. I.E. "'a'" -> [', a, ', \0]
-			if (currentLiteral.length() == 4)
+			// Valid char literals should be string of 3 length. I.E. "'a'" -> [', a, ']
+			if (currentLiteral.length() == 3)
 			{
 				currentToken.value = currentLiteral[1];
 			}

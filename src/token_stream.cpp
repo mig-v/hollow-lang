@@ -94,3 +94,23 @@ bool TokenStream::topIsPrimitive()
 			return false;
 	}
 }
+
+bool TokenStream::topIsAssignment()
+{
+	switch (get().type)
+	{
+		case TokenType::Assign:
+		case TokenType::PlusEquals:
+		case TokenType::MinusEquals:
+		case TokenType::TimesEquals:
+		case TokenType::DividedEquals:
+		case TokenType::BitwiseAndEquals:
+		case TokenType::BitwiseOrEquals:
+		case TokenType::BitwiseXorEquals:
+		case TokenType::BitwiseLeftShiftEquals:
+		case TokenType::BitwiseRightShiftEquals:
+			return true;
+		default:
+			return false;
+	}
+}

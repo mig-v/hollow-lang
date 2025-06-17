@@ -17,14 +17,20 @@ void Parser::printErrors()
 		std::cout << "line " << error.errorToken.lineNum << " " << error.errorMessage << std::endl;
 }
 
-void Parser::parse(std::vector<Token>& tokens)
+void Parser::reset()
 {
 	inFuncDecl = false;
+	ast.clear();
+}
+
+void Parser::parse(std::vector<Token>& tokens)
+{
+	reset();
 	tokenStream.init(tokens);
 
 	while (tokenStream.tokensInStream() && !tokenStream.peek(TokenType::Eof))
 	{
-		ASTNode* node = declaration();
+		ASTStmt* node = declaration();
 
 		// declaration returns a nullptr if an error is found when parsing, so we need to check to make sure a valid AST node was returned
 		// before pushing it into the AST
@@ -33,7 +39,7 @@ void Parser::parse(std::vector<Token>& tokens)
 	}
 }
 
-ASTNode* Parser::declaration()
+ASTStmt* Parser::declaration()
 {
 	try
 	{
@@ -56,13 +62,13 @@ ASTNode* Parser::declaration()
 	}
 }
 
-ASTNode* Parser::varDecl()
+ASTStmt* Parser::varDecl()
 {
 	Token identifier = tokenStream.consume();	// get the identifier
 	tokenStream.consume();						// consume the ":" token
 	Token varType = tokenStream.consume();		// get the type of the variable
 	
-	ASTNode* varInitialization = nullptr;
+	ASTExpr* varInitialization = nullptr;
 	if (tokenStream.peek(TokenType::Assign))
 	{
 		tokenStream.consume();	// consume the "=" token
@@ -72,10 +78,10 @@ ASTNode* Parser::varDecl()
 	}
 
 	assertCurrent(TokenType::Semicolon, "Expect ';' after variable declaration");
-	return new ASTVarDecl(varType.type, identifier, varInitialization);
+	return arena.alloc<ASTVarDecl>(varType.type, identifier, varInitialization);
 }
 
-ASTNode* Parser::funcDecl()
+ASTStmt* Parser::funcDecl()
 {
 	if (inFuncDecl)
 	{
@@ -91,50 +97,32 @@ ASTNode* Parser::funcDecl()
 	assertCurrent(TokenType::Identifier, "Expect function name in declaration");
 	Token functionIdentifier = tokenStream.prev();
 	assertCurrent(TokenType::OpenParen, "Expect \"(\" after function name");
-
-	std::vector<Token> params;
-	if (!tokenStream.peek(TokenType::CloseParen))
-	{
-		assertCurrent(TokenType::Identifier, "Expect parameter name in function declaration");
-		Token paramIdentifier = tokenStream.prev();
-		
-		// this will also need to check for user defined types when that is added
-		assertCurrentIsType("Expect type for function arguments");
-		params.emplace_back(paramIdentifier);
-
-		// same logic as above, just need to consume an additional comma token between parameters
-		while (tokenStream.peek(TokenType::Comma))
-		{
-			tokenStream.consume();
-			assertCurrent(TokenType::Identifier, "Expect parameter name in function declaration");
-			Token paramIdentifier = tokenStream.prev();
-			assertCurrentIsType("Expect type for function arguments");
-			params.emplace_back(paramIdentifier);
-		}
-	}
+	ASTParamList* params = parseFuncParams();
 
 	assertCurrent(TokenType::CloseParen, "Expect \")\" after function parameters");
 	assertCurrent(TokenType::Colon, "Expect \":\" to indicate function return type");
 	assertCurrentIsType("Expect return type in function declaration");
+	Token returnType = tokenStream.prev();
 
 	ASTBlock* body = block();
 
 	inFuncDecl = false;
-	return new ASTFuncDecl(functionIdentifier, params, body);
+	return arena.alloc<ASTFuncDecl>(functionIdentifier, returnType, params, body);
 }
 
-ASTNode* Parser::statement()
+ASTStmt* Parser::statement()
 {
 	// TODO: add forStmt, ifStmt ... , block
 	if (tokenStream.peek(TokenType::ifKeyword))		return ifStatement();
 	if (tokenStream.peek(TokenType::forKeyword))    return forStatement();
 	if (tokenStream.peek(TokenType::returnKeyword)) return returnStatement();
+	if (tokenStream.peek(TokenType::OpenCurly))     return block();
 
 
 	return expressionStatement();
 }
 
-ASTNode* Parser::forStatement()
+ASTStmt* Parser::forStatement()
 {
 	// consume the "for" keyword
 	tokenStream.consume();
@@ -142,7 +130,7 @@ ASTNode* Parser::forStatement()
 
 	// the initializer is null by default when just a ";" is provided
 	// also need to do other checks for declarations or a simple expression -> [i : u8] or [i = 10] respectively
-	ASTNode* initializer = nullptr;
+	ASTStmt* initializer = nullptr;
 	if (tokenStream.peek(TokenType::Semicolon))
 		tokenStream.consume();
 	else if (tokenStream.peek(TokenType::Identifier) && tokenStream.lookAhead(TokenType::Colon))
@@ -150,23 +138,23 @@ ASTNode* Parser::forStatement()
 	else
 		initializer = expressionStatement();
 
-	ASTNode* condition = nullptr;
+	ASTExpr* condition = nullptr;
 	if (!tokenStream.peek(TokenType::Semicolon))
 		condition = expression();
 
 	assertCurrent(TokenType::Semicolon, "Expect \";\" after for loop condition");
 
-	ASTNode* increment = nullptr;
+	ASTExpr* increment = nullptr;
 	if (!tokenStream.peek(TokenType::CloseParen))
 		increment = expression();
 
 	assertCurrent(TokenType::CloseParen, "Expect \")\" at end of for loop");
 	ASTBlock* body = block();
 
-	return new ASTForLoop(initializer, condition, increment, body);
+	return arena.alloc<ASTForLoop>(initializer, condition, increment, body);
 }
 
-ASTNode* Parser::ifStatement()
+ASTStmt* Parser::ifStatement()
 {
 	// consume the "if" keyword
 	tokenStream.consume();
@@ -174,10 +162,10 @@ ASTNode* Parser::ifStatement()
 	// make sure the condition is contained within parenthesis, then get the expression for the condition and the statement for the true branch
 	// we also set the false branch to null by default since it isn't required to have one in an if statement
 	assertCurrent(TokenType::OpenParen, "Expect \"(\" for if statement condition");
-	ASTNode* condition = expression();
+	ASTExpr* condition = expression();
 	assertCurrent(TokenType::CloseParen, "Expect \")\" for if statement condition");
-	ASTNode* trueBranch = statement();
-	ASTNode* falseBranch = nullptr;
+	ASTStmt* trueBranch = statement();
+	ASTStmt* falseBranch = nullptr;
 
 	// check to see if the if statement has an else clause
 	if (tokenStream.peek(TokenType::elseKeyword))
@@ -187,17 +175,17 @@ ASTNode* Parser::ifStatement()
 		falseBranch = statement();
 	}
 
-	return new ASTIfStatement(condition, trueBranch, falseBranch);
+	return arena.alloc<ASTIfStatement>(condition, trueBranch, falseBranch);
 }
 
 ASTBlock* Parser::block()
 {
 	assertCurrent(TokenType::OpenCurly, "Expect \"{\" at start of block");
 
-	ASTBlock* block = new ASTBlock();
+	ASTBlock* block = arena.alloc<ASTBlock>();
 	while (!tokenStream.peek(TokenType::CloseCurly))
 	{
-		ASTNode* statement = declaration();
+		ASTStmt* statement = declaration();
 
 		if (statement)
 			block->statements.emplace_back(statement);
@@ -207,47 +195,47 @@ ASTBlock* Parser::block()
 	return block;
 }
 
-ASTNode* Parser::returnStatement()
+ASTStmt* Parser::returnStatement()
 {
 	// consume the "return" keyword
 	tokenStream.consume();
 
 	// initially have the return value be null, this is because some functions may return void which returns no value
 	// only get the return value if there's not a semicolon directly after the return keyword
-	ASTNode* returnVal = nullptr;
+	ASTExpr* returnVal = nullptr;
 	if (!tokenStream.peek(TokenType::Semicolon))
 		returnVal = expression();
 
 	assertCurrent(TokenType::Semicolon, "Expect \";\" after return value");
-	return new ASTReturn(returnVal);
+	return arena.alloc<ASTReturn>(returnVal);
 }
 
-ASTNode* Parser::expressionStatement()
+ASTStmt* Parser::expressionStatement()
 {
-	ASTNode* expr = expression();
+	ASTExpr* expr = expression();
+	std::cout << "About to assert on semicolon in expressionStatement(), top = " << (int)tokenStream.get().type << std::endl;
 	assertCurrent(TokenType::Semicolon, "Expect \";\" at end of expression");
-	return new ASTExprStmt(expr);
+	return arena.alloc<ASTExprStmt>(expr);
 }
 
-ASTNode* Parser::expression()
+ASTExpr* Parser::expression()
 {
 	return assignment();
 }
 
-ASTNode* Parser::assignment()
+ASTExpr* Parser::assignment()
 {
-	// this will need to be changed once more productions are added. instead of calling primary, call the production at the top of the chain first
-	ASTNode* expression = primary();
+	ASTExpr* expression = logicalOr();
 
-	if (tokenStream.peek(TokenType::Assign))
+	if (tokenStream.topIsAssignment())
 	{
-		Token equal = tokenStream.consume();
-		ASTNode* value = assignment();
-		ASTVarAccess* variable = dynamic_cast<ASTVarAccess*>(expression);
+		Token assignmentOperator = tokenStream.consume();
+		ASTExpr* value = assignment();
+		ASTVariable* variable = dynamic_cast<ASTVariable*>(expression);
 
 		// if the dynamic cast succeeds, the LHS expanded to a variable and we know we're doing an assignment [x = (expression);]
 		if (variable)
-			return new ASTAssign(variable->identifier, value);
+			return arena.alloc<ASTAssign>(variable->identifier, assignmentOperator, value);
 
 		throwError("LHS of assignment needs to be a variable");
 	}
@@ -255,170 +243,265 @@ ASTNode* Parser::assignment()
 	return expression;
 }
 
-ASTNode* Parser::logicalOr()
+ASTExpr* Parser::logicalOr()
 {
-	ASTNode* lhs = logicalAnd();
+	ASTExpr* lhs = logicalAnd();
 
 	while (tokenStream.peek(TokenType::LogicalOr))
 	{
 		Token logicalOperator = tokenStream.consume();
-		ASTNode* rhs = logicalAnd();
-		lhs = new ASTLogical(lhs, logicalOperator, rhs);
+		ASTExpr* rhs = logicalAnd();
+		lhs = arena.alloc<ASTLogical>(lhs, logicalOperator, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::logicalAnd()
+ASTExpr* Parser::logicalAnd()
 {
-	ASTNode* lhs = equality();
+	ASTExpr* lhs = bitwiseOr();
 
 	while (tokenStream.peek(TokenType::LogicalAnd))
 	{
 		Token logicalOperator = tokenStream.consume();
-		ASTNode* rhs = equality();
-		lhs = new ASTLogical(lhs, logicalOperator, rhs);
+		ASTExpr* rhs = bitwiseOr();
+		lhs = arena.alloc<ASTLogical>(lhs, logicalOperator, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::equality()
+ASTExpr* Parser::bitwiseOr()
 {
-	ASTNode* lhs = comparison();
+	ASTExpr* lhs = bitwiseXor();
+
+	while (tokenStream.peek(TokenType::BitwiseOr))
+	{
+		Token op = tokenStream.consume();
+		ASTExpr* rhs = bitwiseXor();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
+	}
+
+	return lhs;
+}
+
+ASTExpr* Parser::bitwiseXor()
+{
+	ASTExpr* lhs = bitwiseAnd();
+
+	while (tokenStream.peek(TokenType::BitwiseXor))
+	{
+		Token op = tokenStream.consume();
+		ASTExpr* rhs = bitwiseAnd();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
+	}
+
+	return lhs;
+}
+
+ASTExpr* Parser::bitwiseAnd()
+{
+	ASTExpr* lhs = equality();
+
+	while (tokenStream.peek(TokenType::BitwiseAnd))
+	{
+		Token op = tokenStream.consume();
+		ASTExpr* rhs = equality();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
+	}
+
+	return lhs;
+}
+
+ASTExpr* Parser::equality()
+{
+	ASTExpr* lhs = comparison();
 
 	while (tokenStream.matchToken({ TokenType::NotEq, TokenType::Equality }))
 	{
 		Token op = tokenStream.consume();
-		ASTNode* rhs = comparison();
-		lhs = new ASTBinaryExpr(lhs, op, rhs);
+		ASTExpr* rhs = comparison();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::comparison()
+ASTExpr* Parser::comparison()
 {
-	ASTNode* lhs = term();
+	ASTExpr* lhs = bitwiseShift();
 	
 	while (tokenStream.matchToken({ TokenType::GreaterThan, TokenType::GreaterThanEq, TokenType::LessThan, TokenType::LessThanEq }))
 	{
 		Token op = tokenStream.consume();
-		ASTNode* rhs = term();
-		lhs = new ASTBinaryExpr(lhs, op, rhs);
+		ASTExpr* rhs = bitwiseShift();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::term()
+ASTExpr* Parser::bitwiseShift()
 {
-	ASTNode* lhs = factor();
+	ASTExpr* lhs = term();
+
+	while (tokenStream.matchToken({ TokenType::BitwiseLeftShift, TokenType::BitwiseRightShift }))
+	{
+		Token op = tokenStream.consume();
+		ASTExpr* rhs = term();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
+	}
+
+	return lhs;
+}
+
+ASTExpr* Parser::term()
+{
+	ASTExpr* lhs = factor();
 
 	while (tokenStream.matchToken({ TokenType::Minus, TokenType::Plus }))
 	{
 		Token op = tokenStream.consume();
-		ASTNode* rhs = factor();
-		lhs = new ASTBinaryExpr(lhs, op, rhs);
+		ASTExpr* rhs = factor();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::factor()
+ASTExpr* Parser::factor()
 {
-	ASTNode* lhs = unary();
+	ASTExpr* lhs = unary();
 
 	while (tokenStream.matchToken({ TokenType::ForwardSlash, TokenType::Asterisk }))
 	{
 		Token op = tokenStream.consume();
-		ASTNode* rhs = unary();
-		lhs = new ASTBinaryExpr(lhs, op, rhs);
+		ASTExpr* rhs = unary();
+		lhs = arena.alloc<ASTBinaryExpr>(lhs, op, rhs);
 	}
 
 	return lhs;
 }
 
-ASTNode* Parser::unary()
+ASTExpr* Parser::unary()
 {
 	// if the top token is "-" or "!", consume it and recursively call unary again. This allows expressions like !!(expression), -(expression)
 	// and even !foo() or -foo() via the call() function at the bottom. call() will either result in a function call, or a simple primary() call
-	if (tokenStream.matchToken({ TokenType::Minus, TokenType::LogicalNot }))
+	if (tokenStream.matchToken({ TokenType::Minus, TokenType::LogicalNot, TokenType::BitwiseNot, TokenType::Increment, TokenType::Decrement }))
 	{
 		Token op = tokenStream.consume();
-		ASTNode* expr = unary();
-		return new ASTUnaryExpr(op, expr);
+		ASTExpr* expr = unary();
+		return arena.alloc<ASTUnaryExpr>(op, expr);
 	}
 
-	return call();
+	return postfix();
 }
 
-ASTNode* Parser::call()
+ASTExpr* Parser::postfix()
 {
 	// parse the primary production rule
-	ASTNode* expr = primary();
+	ASTExpr* expr = primary();
 
-	// this call() production rule can produce a function call if we find an open paren directly after our primary rule
-	// otherwise, if no open paren is found, the primary we produced is returned since the while loop will do nothing
+	// this postfix() production rule can produce a function call if we find an open paren directly after our primary rule
 	while (true)
 	{
 		if (tokenStream.peek(TokenType::OpenParen))
+		{
 			expr = parseFuncArgs(expr);
+		}
+		else if (tokenStream.matchToken({ TokenType::Increment, TokenType::Decrement }))
+		{
+			Token op = tokenStream.consume();
+			expr = arena.alloc<ASTPostfix>(expr, op);
+		}
 		else
 			break;
 	}
-
+	
 	return expr;
 }
 
-ASTNode* Parser::parseFuncArgs(ASTNode* callee)
+ASTExpr* Parser::parseFuncArgs(ASTNode* callee)
 {
 	// consume the "(" token
 	tokenStream.consume();
-	std::vector<ASTNode*> args;
+	ASTArgList* args = arena.alloc<ASTArgList>();
 
 	// if the next token after "(" is ")", then the function is being called with no arguments
 	if (tokenStream.peek(TokenType::CloseParen))
-		return new ASTCall(callee, args);
+		return arena.alloc<ASTCall>(callee, args);
 
 	// otherwise, parse all arguments
-	args.emplace_back(expression());
+	args->args.emplace_back(arena.alloc<ASTArgument>(expression()));
 	while (tokenStream.peek(TokenType::Comma))
 	{
 		tokenStream.consume();
-		args.emplace_back(expression());
+		args->args.emplace_back(arena.alloc<ASTArgument>(expression()));
 	}
 
 	assertCurrent(TokenType::CloseParen, "Expect \")\" after function arguments");
-	return new ASTCall(callee, args);
+	return arena.alloc<ASTCall>(callee, args);
 }
 
-ASTNode* Parser::primary()
+ASTParamList* Parser::parseFuncParams()
 {
-	std::cout << "in primary\n";
-	if (tokenStream.peek(TokenType::IntLiteral)) return new ASTIntLiteral(std::get<uint64_t>(tokenStream.consume().value));
-	if (tokenStream.peek(TokenType::FloatLiteral)) return new ASTDoubleLiteral(std::get<double>(tokenStream.consume().value));
-	if (tokenStream.peek(TokenType::CharLiteral)) return new ASTCharLiteral(std::get<char>(tokenStream.consume().value));
-	if (tokenStream.peek(TokenType::Identifier)) return new ASTVarAccess(tokenStream.consume());
+	ASTParamList* node = arena.alloc<ASTParamList>();
+	if (!tokenStream.peek(TokenType::CloseParen))
+	{
+		assertCurrent(TokenType::Identifier, "Expect parameter name in function declaration");
+		Token paramIdentifier = tokenStream.prev();
+
+		// this will also need to check for user defined types when that is added
+		assertCurrent(TokenType::Colon, "Parameters need to be in the form of identifier : type");
+		assertCurrentIsType("Expect type for function arguments");
+		Token paramType = tokenStream.prev();
+
+		node->params.emplace_back(arena.alloc<ASTParameter>(paramIdentifier, paramType));
+
+		// same logic as above, just need to consume an additional comma token between parameters
+		while (tokenStream.peek(TokenType::Comma))
+		{
+			tokenStream.consume();
+			assertCurrent(TokenType::Identifier, "Expect parameter name in function declaration");
+			Token paramIdentifier = tokenStream.prev();
+
+			assertCurrent(TokenType::Colon, "Function parameters need to be in the form of identifier : type");
+			assertCurrentIsType("Expect type for function arguments");
+			Token paramType = tokenStream.prev();
+
+			node->params.emplace_back(arena.alloc<ASTParameter>(paramIdentifier, paramType));
+		}
+	}
+
+	return node;
+}
+
+ASTExpr* Parser::primary()
+{
+	
+	if (tokenStream.peek(TokenType::IntLiteral))   return arena.alloc<ASTIntLiteral>(std::get<uint64_t>(tokenStream.consume().value));
+	if (tokenStream.peek(TokenType::FloatLiteral)) return arena.alloc<ASTDoubleLiteral>(std::get<double>(tokenStream.consume().value));
+	if (tokenStream.peek(TokenType::CharLiteral))  return arena.alloc<ASTCharLiteral>(std::get<char>(tokenStream.consume().value));
+	if (tokenStream.peek(TokenType::Identifier))   return arena.alloc<ASTVariable>(tokenStream.consume());
 
 	if (tokenStream.peek(TokenType::trueKeyword))
 	{
 		tokenStream.consume();
-		return new ASTBoolLiteral(true);
+		return arena.alloc<ASTBoolLiteral>(true);
 	}
 
 	if (tokenStream.peek(TokenType::falseKeyword))
 	{
 		tokenStream.consume();
-		return new ASTBoolLiteral(false);
+		return arena.alloc<ASTBoolLiteral>(false);
 	}
 
 	if (tokenStream.peek(TokenType::OpenParen))
 	{
 		tokenStream.consume();
-		ASTNode* expr = expression();
+		ASTExpr* expr = expression();
 		assertCurrent(TokenType::CloseParen, "Expect \")\" to close expression");
-		return new ASTGroupExpr(expr);
+		return arena.alloc<ASTGroupExpr>(expr);
 	}
 }
 
@@ -463,7 +546,7 @@ void Parser::synchronize()
 	if (tokenStream.tokensInStream())
 		tokenStream.consume();
 
-	// sometimes there will be a closing curly brace if the line that had an error was right before a block ended, so just check for that
+	// sometimes there will be a closing curly brace if the line that had an error was right before a block ending, so just check for that
 	if (tokenStream.peek(TokenType::CloseCurly))
 		tokenStream.consume();
 }

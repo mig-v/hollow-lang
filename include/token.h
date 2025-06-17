@@ -50,6 +50,8 @@ enum class TokenType
 	CloseParen,
 	OpenCurly,
 	CloseCurly,
+	OpenBracket,
+	CloseBracket,
 
 	Semicolon,
 	Colon,
@@ -77,6 +79,19 @@ enum class TokenType
 	BitwiseNot,
 	BitwiseLeftShift,
 	BitwiseRightShift,
+	BitwiseOrEquals,
+	BitwiseAndEquals,
+	BitwiseXorEquals,
+	BitwiseLeftShiftEquals,
+	BitwiseRightShiftEquals,
+
+	Increment,
+	Decrement,
+	PlusEquals,
+	MinusEquals,
+	TimesEquals,
+	DividedEquals,
+	DotOperator,
 
 	// Note: This token type is never emitted, it is only here to make lexing escaped chars easier and is later converted to CharLiteral
 	EscapedCharLiteral,	

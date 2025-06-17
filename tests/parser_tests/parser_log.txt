@@ -1,0 +1,2 @@
+literals_test.hollow ... PASSED
+

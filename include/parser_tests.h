@@ -1,31 +1,31 @@
 #pragma once
 
-#include <array>
 #include <vector>
 #include <string>
 #include <map>
 #include <fstream>
 
-#include <token.h>
+#include "parser.h"
 #include "lexer.h"
 
-struct LexerTestInfo
+struct ParserTestInfo
 {
 	std::string testname;
-	std::vector<TokenType> expectedTokens;
+	std::vector<ASTNode*> expectedAst;
 };
 
-class LexerTests
+class ParserTests
 {
 public:
-	LexerTests();
+	ParserTests();
+	~ParserTests();
 	void runAll();
 
 private:
 	void runSpecific(const std::string& filename);
 
 	Lexer lexer;
-	std::map<std::string, LexerTestInfo> testSuite;
-	std::array<std::string, (size_t)TokenType::NumTokens> tokenTypeToStr;
+	Parser parser;
+	std::map<std::string, ParserTestInfo> testSuite;
 	std::ofstream logFile;
 };

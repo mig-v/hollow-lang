@@ -1,225 +1,95 @@
 #include "ast_node.h"
+#include "ast_expr.h"
+#include "ast_stmt.h"
 #include "ast_printer.h"
+#include "semantic_analysis.h"
 
-//ASTUnsignedLiteral::ASTUnsignedLiteral(TokenType primitiveType, uint64_t value)
-//{
-//	this->type = primitiveType;
-//	this->value = value;
-//}
-//
-//void ASTUnsignedLiteral::accept(ASTPrinter visitor)
-//{
-//	visitor.visitUnsignedLiteral(*this);
-//}
-//
-//ASTSignedLiteral::ASTSignedLiteral(TokenType primitiveType, int64_t value)
-//{
-//	this->type = primitiveType;
-//	this->value = value;
-//}
-//
-//void ASTSignedLiteral::accept(ASTPrinter visitor)
-//{
-//	visitor.visitSignedLiteral(*this);
-//}
+#include <iostream>
 
-ASTIntLiteral::ASTIntLiteral(uint64_t value)
+ASTParameter::ASTParameter(Token paramIdentifier, Token paramType)
 {
-	this->value = value;
+	this->paramIdentifier = paramIdentifier;
+	this->paramType = paramType;
+	this->typeInfo = nullptr;
 }
 
-void ASTIntLiteral::accept(ASTPrinter visitor)
+bool ASTParameter::operator==(const ASTNode& other) const
 {
-	visitor.visitIntLiteral(*this);
+	if (const ASTParameter* node = dynamic_cast<const ASTParameter*>(&other))
+	{
+		// NOTE: This .type comparison will only work for built in types. Once user types are added their token string variant value will need
+		//       to be compared
+		return ((node->paramType.type == this->paramType.type)
+			&& (std::get<std::string>(node->paramIdentifier.value) == std::get<std::string>(this->paramIdentifier.value)));
+	}
+
+	return false;
 }
 
-//ASTFloatLiteral::ASTFloatLiteral(float value)
-//{
-//	this->value = value;
-//}
-//
-//void ASTFloatLiteral::accept(ASTPrinter visitor)
-//{
-//	visitor.visitFloatLiteral(*this);
-//}
-
-ASTDoubleLiteral::ASTDoubleLiteral(double value)
+void ASTParameter::accept(ASTPrinter visitor)
 {
-	this->value = value;
+	visitor.visitParameter(*this);
 }
 
-void ASTDoubleLiteral::accept(ASTPrinter visitor)
+void ASTParameter::accept(SemanticAnalysis& visitor)
 {
-	visitor.visitDoubleLiteral(*this);
+	visitor.visitParameter(*this);
 }
 
-ASTCharLiteral::ASTCharLiteral(char value)
+bool ASTParamList::operator==(const ASTNode& other) const
 {
-	this->value = value;
+	if (const ASTParamList* node = dynamic_cast<const ASTParamList*>(&other))
+	{
+		if (node->params.size() != this->params.size())
+			return false;
+
+		for (size_t i = 0; i < this->params.size(); i++)
+		{
+			if (!(astEqual(node->params[i], this->params[i])))
+				return false;
+		}
+
+		return true;
+	}
+	
+	return false;
 }
 
-void ASTCharLiteral::accept(ASTPrinter visitor)
+void ASTParamList::accept(ASTPrinter visitor)
 {
-	visitor.visitCharLiteral(*this);
+	visitor.visitParamList(*this);
 }
 
-ASTBoolLiteral::ASTBoolLiteral(bool value)
+void ASTParamList::accept(SemanticAnalysis& visitor)
 {
-	this->value = value;
+	visitor.visitParamList(*this);
 }
 
-void ASTBoolLiteral::accept(ASTPrinter visitor)
+bool ASTArgList::operator==(const ASTNode& other) const
 {
-	visitor.visitBoolLiteral(*this);
+	if (const ASTArgList* node = dynamic_cast<const ASTArgList*>(&other))
+	{
+		if (node->args.size() != this->args.size())
+			return false;
+
+		for (size_t i = 0; i < this->args.size(); i++)
+		{
+			if (!(astEqual(node->args[i], this->args[i])))
+				return false;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
-ASTVarDecl::ASTVarDecl(TokenType varType, Token varIdentifier, ASTNode* initialization)
+void ASTArgList::accept(ASTPrinter visitor)
 {
-	this->varType = varType;
-	this->varIdentifier = varIdentifier;
-	this->initialization = initialization;
+	visitor.visitArgList(*this);
 }
 
-void ASTVarDecl::accept(ASTPrinter visitor)
+void ASTArgList::accept(SemanticAnalysis& visitor)
 {
-	visitor.visitVarDecl(*this);
-}
-
-ASTFuncDecl::ASTFuncDecl(Token funcIdentifier, std::vector<Token>& params, ASTBlock* body)
-{
-	this->funcIdentifier = funcIdentifier;
-	this->params = std::move(params);
-	this->body = body;
-}
-
-void ASTFuncDecl::accept(ASTPrinter visitor)
-{
-	visitor.visitFuncDecl(*this);
-}
-
-ASTVarAccess::ASTVarAccess(Token identifier)
-{
-	this->identifier = identifier;
-}
-
-void ASTVarAccess::accept(ASTPrinter visitor)
-{
-	visitor.visitVarAccess(*this);
-}
-
-ASTExprStmt::ASTExprStmt(ASTNode* expression)
-{
-	this->expression = expression;
-}
-
-void ASTExprStmt::accept(ASTPrinter visitor)
-{
-	visitor.visitExprStmt(*this);
-}
-
-ASTAssign::ASTAssign(Token identifier, ASTNode* value)
-{
-	this->identifier = identifier;
-	this->value = value;
-}
-
-void ASTAssign::accept(ASTPrinter visitor)
-{
-	visitor.visitAssign(*this);
-}
-
-ASTReturn::ASTReturn(ASTNode* returnVal)
-{
-	this->returnVal = returnVal;
-}
-
-void ASTReturn::accept(ASTPrinter visitor)
-{
-	visitor.visitReturn(*this);
-}
-
-void ASTBlock::accept(ASTPrinter visitor)
-{
-	visitor.visitBlock(*this);
-}
-
-ASTForLoop::ASTForLoop(ASTNode* initializer, ASTNode* condition, ASTNode* increment, ASTBlock* body)
-{
-	this->initializer = initializer;
-	this->condition = condition;
-	this->increment = increment;
-	this->body = body;
-}
-
-void ASTForLoop::accept(ASTPrinter visitor)
-{
-	visitor.visitForLoop(*this);
-}
-
-ASTIfStatement::ASTIfStatement(ASTNode* condition, ASTNode* trueBranch, ASTNode* falseBranch)
-{
-	this->condition = condition;
-	this->trueBranch = trueBranch;
-	this->falseBranch = falseBranch;
-}
-
-void ASTIfStatement::accept(ASTPrinter visitor)
-{
-	visitor.visitIfStatement(*this);
-}
-
-ASTLogical::ASTLogical(ASTNode* lhs, Token logicalOperator, ASTNode* rhs)
-{
-	this->lhs = lhs;
-	this->logicalOperator;
-	this->rhs = rhs;
-}
-
-void ASTLogical::accept(ASTPrinter visitor)
-{
-	visitor.visitLogical(*this);
-}
-
-ASTBinaryExpr::ASTBinaryExpr(ASTNode* lhs, Token op, ASTNode* rhs)
-{
-	this->lhs = lhs;
-	this->op = op;
-	this->rhs = rhs;
-}
-
-void ASTBinaryExpr::accept(ASTPrinter visitor)
-{
-	visitor.visitBinaryExpr(*this);
-}
-
-ASTUnaryExpr::ASTUnaryExpr(Token op, ASTNode* expr)
-{
-	this->op = op;
-	this->expr = expr;
-}
-
-void ASTUnaryExpr::accept(ASTPrinter visitor)
-{
-	visitor.visitUnaryExpr(*this);
-}
-
-ASTCall::ASTCall(ASTNode* callee, std::vector<ASTNode*>& args)
-{
-	this->callee = callee;
-	this->args = std::move(args);
-}
-
-void ASTCall::accept(ASTPrinter visitor)
-{
-	visitor.visitCall(*this);
-}
-
-ASTGroupExpr::ASTGroupExpr(ASTNode* expr)
-{
-	this->expr = expr;
-}
-
-void ASTGroupExpr::accept(ASTPrinter visitor)
-{
-	visitor.visitGroupExpr(*this);
+	visitor.visitArgList(*this);
 }

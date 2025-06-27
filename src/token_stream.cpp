@@ -5,8 +5,9 @@ void TokenStream::init(std::vector<Token>& tokens)
 	this->tokens = std::move(tokens);
 	this->current = 0;
 
-	this->nullToken.lineNum = 0;
-	this->nullToken.type = TokenType::None;
+	this->nullToken.lineNum = 1;
+	this->nullToken.type = TokenType::Eof;
+	this->nullToken.column = 1;
 }
 
 Token TokenStream::consume()

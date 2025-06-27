@@ -1,0 +1,36 @@
+// variable declarations with missing / provided initializers
+x : i32;
+y : f32 = 1.0;
+flag : bool = true;
+z : i32 = 1;
+flag2 : bool = false;
+
+// test assignment and compound assignment operators
+x = 1;
+x += 1;
+x -= 1;
+x *= 1;
+x /= 1;
+x &= 1;
+x |= 1;
+x ^= 1;
+x <<= 1;
+x >>= 1;
+x = y + 1;
+
+// NOTE: this is semantically incorrect since we're redeclaring x, y, and z, but the parser doesn't care about semantics so its ok
+x : i32 = 10 + 20;       // initialized with expression
+y : i32 = (5 * 3) - 1;   // initialized with grouped expr
+z : bool = !false;       // initialized with unary expr
+
+x;
+x + 5;
+x * y + z;
+
+(x);
+(x + y) * z;
+~(x + y) + ~(y + z);
+!(x + y);
+
+x++;
+--x;

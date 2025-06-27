@@ -1,0 +1,27 @@
+// unary minus
+-1;
+-(1 + 2);
+-1 + 2;
+-1 + -2;
+
+// unary logical not
+!true;
+!(false);
+!true && !false;
+!(true && false);
+
+// unary bitwise not
+~1;
+~(1);
+~(1 + 2);
+~1 + ~2;
+
+
+--1;
+!!true;
+~-1;
+-~1;
+
+-1 * 2;
+~1 & 2;
+!true == false;

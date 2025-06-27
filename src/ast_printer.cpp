@@ -3,252 +3,332 @@
 #include "ast_printer.h"
 #include "debug_utils.h"
 
-void ASTPrinter::visitIntLiteral(ASTIntLiteral& node)
+namespace { constexpr uint32_t SPACES_PER_DEPTH = 4; }
+
+void ASTPrinter::visitIntLiteral(ASTIntLiteral& node, uint32_t depth)
 {
-	std::cout << "[Int Literal Node] = " << node.value << std::endl;
+	std::string indent(SPACES_PER_DEPTH * depth, ' '); 
+	std::cout << indent << "[Int Literal Node] " << node.value << std::endl;
+	printTypeInfo(depth + 1, node.typeInfo);
 }
 
-void ASTPrinter::visitDoubleLiteral(ASTDoubleLiteral& node)
+void ASTPrinter::visitDoubleLiteral(ASTDoubleLiteral& node, uint32_t depth)
 {
-	std::cout << "[Double Literal Node] f64 = " << node.value << std::endl;
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Double Literal Node] " << node.value << std::endl;
+	printTypeInfo(depth + 1, node.typeInfo);
 }
 
-void ASTPrinter::visitCharLiteral(ASTCharLiteral& node)
+void ASTPrinter::visitCharLiteral(ASTCharLiteral& node, uint32_t depth)
 {
-	std::cout << "[Char Literal Node] char = " << node.value << std::endl;
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Char Literal Node] " << node.value << std::endl;
+	printTypeInfo(depth + 1, node.typeInfo);
 }
 
-void ASTPrinter::visitBoolLiteral(ASTBoolLiteral& node)
+void ASTPrinter::visitBoolLiteral(ASTBoolLiteral& node, uint32_t depth)
 {
-	std::cout << "[Bool Literal Node] = " << node.value << std::endl;
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Bool Literal Node] " << node.value << std::endl;
+	printTypeInfo(depth + 1, node.typeInfo);
 }
 
-void ASTPrinter::visitVarDecl(ASTVarDecl& node)
+void ASTPrinter::printNull(uint32_t depth, const std::string& message)
 {
-	std::cout << "[Var Decl Node] : " << std::get<std::string>(node.varIdentifier.value) << "\n\tinitializer: ";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << message << std::endl;
+}
+
+void ASTPrinter::printTypeInfo(uint32_t depth, TypeInfo* info)
+{
+	if (!info)
+	{
+		printNull(depth, "(no type information)");
+		return;
+	}
+
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Type Info] " << DebugUtils::typeKindToString(info->type) << std::endl;
+}
+
+void ASTPrinter::visitVarDecl(ASTVarDecl& node, uint32_t depth)
+{
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Var Decl Node] " << std::get<std::string>(node.varIdentifier.value) << "\n";
+	printTypeInfo(depth + 1, node.typeInfo);
 
 	if (node.initialization)
-		node.initialization->accept(*this);
+		node.initialization->accept(*this, depth + 1);
 	else
-		std::cout << "(null initializer)\n";
-
-	if (node.typeInfo)
-		std::cout << "\ttype: " << DebugUtils::typeKindToString(node.typeInfo->type) << " scope: " << node.scope << " slot index : " << node.slotIndex << std::endl;
+		printNull(depth + 1, "(null variable initializer)");
 }
 
-void ASTPrinter::visitFuncDecl(ASTFuncDecl& node)
+void ASTPrinter::visitFuncDecl(ASTFuncDecl& node, uint32_t depth)
 {
-	std::cout << "[Func Decl Node] Function name: " << std::get<std::string>(node.funcIdentifier.value) << std::endl;
-	node.params->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Func Decl Node] " << std::get<std::string>(node.funcIdentifier.value) << std::endl;
+	node.params->accept(*this, depth + 1);
+	node.body->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitVariable(ASTVariable& node)
+void ASTPrinter::visitIdentifier(ASTIdentifier& node, uint32_t depth)
 {
-	std::cout << "[Var Access Node] Variable name: " << std::get<std::string>(node.identifier.value) << std::endl;
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Identifier Node] " << std::get<std::string>(node.identifier.value) << std::endl;
+	printTypeInfo(depth + 1, node.typeInfo);
 }
 
-void ASTPrinter::visitExprStmt(ASTExprStmt& node)
+void ASTPrinter::visitExprStmt(ASTExprStmt& node, uint32_t depth)
 {
-	std::cout << "[Expr Stmt Node] --> ";
-	node.expression->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Expr Stmt Node]\n";
+	node.expression->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitAssign(ASTAssign& node)
+void ASTPrinter::visitAssign(ASTAssign& node, uint32_t depth)
 {
-	std::cout << "[Assign Node] " << std::get<std::string>(node.identifier.value) << " = ";
-	node.value->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Assign Node] ";
+
+	switch (node.op.type)
+	{
+		case TokenType::Assign:                  std::cout << "=\n";   break;
+		case TokenType::PlusEquals:              std::cout << "+=\n";  break;
+		case TokenType::MinusEquals:             std::cout << "-=\n";  break;
+		case TokenType::TimesEquals:             std::cout << "*=\n";  break;
+		case TokenType::DividedEquals:           std::cout << "/=\n";  break;
+		case TokenType::BitwiseAndEquals:        std::cout << "&=\n";  break;
+		case TokenType::BitwiseOrEquals:         std::cout << "|=\n";  break;
+		case TokenType::BitwiseXorEquals:        std::cout << "^=\n";  break;
+		case TokenType::BitwiseLeftShiftEquals:  std::cout << "<<=\n"; break;
+		case TokenType::BitwiseRightShiftEquals: std::cout << ">>=\n"; break;
+	}
+
+	node.assignee->accept(*this, depth + 1);
+	node.value->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitReturn(ASTReturn& node)
+void ASTPrinter::visitReturn(ASTReturn& node, uint32_t depth)
 {
-	std::cout << "[Return Node] return value = ";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Return Node]\n";
 
 	// the return value can be null if the function returns void
 	if (node.returnVal)
-		node.returnVal->accept(*this);
+		node.returnVal->accept(*this, depth + 1);
 	else
-		std::cout << "void\n";
+		printNull(depth + 1, "(void)");
 }
 
-void ASTPrinter::visitBlock(ASTBlock& node)
+void ASTPrinter::visitBlock(ASTBlock& node, uint32_t depth)
 {
-	std::cout << "[Block Node Start]\n";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Block Node Start]\n";
 
 	for (ASTNode* statement : node.statements)
-		statement->accept(*this);
+		statement->accept(*this, depth + 1);
 
-	std::cout << "[Block Node End]\n";
+	std::cout << indent << "[Block Node End]\n";
 }
 
-void ASTPrinter::visitForLoop(ASTForLoop& node)
+void ASTPrinter::visitForLoop(ASTForLoop& node, uint32_t depth)
 {
-	std::cout << "[For Loop Node]\ninitializer = ";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[For Loop Node]\n";
 
 	if (node.initializer)
-		node.initializer->accept(*this);
+		node.initializer->accept(*this, depth + 1);
 	else
-		std::cout << "(null)\n";
+		printNull(depth + 1, "(null initializer)");
 
-	std::cout << "condition = ";
 	if (node.condition)
-		node.condition->accept(*this);
+		node.condition->accept(*this, depth + 1);
 	else
-		std::cout << "(null)\n";
+		printNull(depth + 1, "(null condition)");
 
-	std::cout << "increment = ";
 	if (node.increment)
-		node.increment->accept(*this);
+		node.increment->accept(*this, depth + 1);
 	else
-		std::cout << "(null)\n";
+		printNull(depth + 1, "(null increment)");
 
-	node.body->accept(*this);
+	node.body->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitIfStatement(ASTIfStatement& node)
+void ASTPrinter::visitWhileLoop(ASTWhileLoop& node, uint32_t depth)
 {
-	std::cout << "[If Statement Node]\n\tcondition = ";
-	node.condition->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[While Loop Node]\n";
+	node.condition->accept(*this, depth + 1);
+	node.body->accept(*this, depth + 1);
+}
 
-	std::cout << "\tTrue Branch = ";
-	node.trueBranch->accept(*this);
+void ASTPrinter::visitIfStatement(ASTIfStatement& node, uint32_t depth)
+{
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[If Statement Node]\n";
+	node.condition->accept(*this, depth + 1);
 
-	std::cout << "\tFalse Branch = ";
+	node.trueBranch->accept(*this, depth + 1);
+
 	if (node.falseBranch)
-		node.falseBranch->accept(*this);
+		node.falseBranch->accept(*this, depth + 1);
 	else
-		std::cout << "(no false branch)\n";
+		printNull(depth + 1, "(no false branch)");
 }
 
-void ASTPrinter::visitLogical(ASTLogical& node)
+void ASTPrinter::visitLogical(ASTLogical& node, uint32_t depth)
 {
-	std::cout << "[Logical Node]\n\tlhs = ";
-	node.lhs->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Logical Node] ";
 
-	std::cout << "\trhs = ";
+	switch (node.logicalOperator.type)
+	{
+		case TokenType::LogicalAnd: std::cout << "&&\n"; break;
+		case TokenType::LogicalOr:  std::cout << "||\n"; break;
+	}
+
+	node.lhs->accept(*this, depth + 1);
 	if (node.rhs)
-		node.rhs->accept(*this);
+		node.rhs->accept(*this, depth + 1);
 	else
 		std::cout << "(no rhs)\n";
 }
 
-void ASTPrinter::visitBinaryExpr(ASTBinaryExpr& node)
+void ASTPrinter::visitBinaryExpr(ASTBinaryExpr& node, uint32_t depth)
 {
-	std::cout << "[Binary Expr Node]\n\tlhs = ";
-	node.lhs->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Binary Expr Node] ";
 
 	switch (node.op.type)
 	{
-		case TokenType::Plus:          std::cout << "\toperator: +\n"; break;
-		case TokenType::Minus:         std::cout << "\toperator: -\n"; break;
-		case TokenType::Asterisk:      std::cout << "\toperator: *\n"; break;
-		case TokenType::ForwardSlash:  std::cout << "\toperator: /\n"; break;
-		case TokenType::NotEq:         std::cout << "\toperator: !=\n"; break;
-		case TokenType::Equality:      std::cout << "\toperator: ==\n"; break;
-		case TokenType::GreaterThan:   std::cout << "\toperator: >\n"; break;
-		case TokenType::GreaterThanEq: std::cout << "\toperator: >=\n"; break;
-		case TokenType::LessThan:      std::cout << "\toperator: <\n"; break;
-		case TokenType::LessThanEq:    std::cout << "\toperator: <=\n"; break;
+		case TokenType::Plus:              std::cout << "+\n"; break;
+		case TokenType::Minus:             std::cout << "-\n"; break;
+		case TokenType::Asterisk:          std::cout << "*\n"; break;
+		case TokenType::ForwardSlash:      std::cout << "/\n"; break;
+		case TokenType::NotEq:             std::cout << "!=\n"; break;
+		case TokenType::Equality:          std::cout << "==\n"; break;
+		case TokenType::GreaterThan:       std::cout << ">\n"; break;
+		case TokenType::GreaterThanEq:     std::cout << ">=\n"; break;
+		case TokenType::LessThan:          std::cout << "<\n"; break;
+		case TokenType::LessThanEq:        std::cout << "<=\n"; break;
+		case TokenType::BitwiseAnd:        std::cout << "&\n"; break;
+		case TokenType::BitwiseOr:         std::cout << "|\n"; break;
+		case TokenType::BitwiseXor:        std::cout << "^\n"; break;
+		case TokenType::BitwiseLeftShift:  std::cout << "<<\n"; break;
+		case TokenType::BitwiseRightShift: std::cout << ">>\n"; break;
 	}
 
-	std::cout << "\trhs = ";
-	node.rhs->accept(*this);
+	printTypeInfo(depth + 1, node.typeInfo);
+
+	node.lhs->accept(*this, depth + 1);
+	node.rhs->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitUnaryExpr(ASTUnaryExpr& node)
+void ASTPrinter::visitUnaryExpr(ASTUnaryExpr& node, uint32_t depth)
 {
-	std::cout << "[Unary Expr Node]\n";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Unary Expr Node] ";
 	
 	switch (node.op.type)
 	{
-		case TokenType::LogicalNot: std::cout << "\top = !\n"; break;
-		case TokenType::Minus:      std::cout << "\top = -\n"; break;
+		case TokenType::LogicalNot: std::cout << "!\n"; break;
+		case TokenType::Minus:      std::cout << "-\n"; break;
+		case TokenType::BitwiseNot: std::cout << "~\n"; break;
+		case TokenType::Increment:  std::cout << "++\n"; break;
+		case TokenType::Decrement:  std::cout << "--\n"; break;
 	}
 
-	std::cout << "\texpression = ";
-	node.expr->accept(*this);
+	node.expr->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitCall(ASTCall& node)
+void ASTPrinter::visitCall(ASTCall& node, uint32_t depth)
 {
-	std::cout << "[Call Node]\n\tcallee = ";
-	node.callee->accept(*this);
-	
-	std::cout << "[Args Start]\n";
-
-	for (ASTArgument* arg : node.args->args)
-		arg->accept(*this);
-
-	std::cout << "[Args End]\n";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Call Node]\n";
+	node.callee->accept(*this, depth + 1);
+	node.args->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitGroupExpr(ASTGroupExpr& node)
+void ASTPrinter::visitGroupExpr(ASTGroupExpr& node, uint32_t depth)
 {
-	std::cout << "[Group Expr Node] --> ";
-	node.expr->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Group Expr Node]\n";
+	node.expr->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitPostfix(ASTPostfix& node)
+void ASTPrinter::visitPostfix(ASTPostfix& node, uint32_t depth)
 {
-	std::cout << "[Postfix Node] --> ";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Postfix Node] ";
 
 	switch (node.op.type)
 	{
-		case TokenType::Increment: std::cout << "op = ++ "; break;
-		case TokenType::Decrement: std::cout << "op = -- "; break;
+		case TokenType::Increment: std::cout << "++\n"; break;
+		case TokenType::Decrement: std::cout << "--\n"; break;
 	}
 
-	std::cout << " expr: ";
-	node.expr->accept(*this);
+	node.expr->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitParameter(ASTParameter& node)
+void ASTPrinter::visitParameter(ASTParameter& node, uint32_t depth)
 {
-	std::cout << "[Parameter Node] Identifier : "
-		<< std::get<std::string>(node.paramIdentifier.value);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Parameter Node] " << std::get<std::string>(node.paramIdentifier.value);
 		
 	switch (node.paramType.type)
 	{
-		case TokenType::u8Keyword:   std::cout << " Type: u8\n";   break;
-		case TokenType::u16Keyword:  std::cout << " Type: u16\n";  break;
-		case TokenType::u32Keyword:  std::cout << " Type: u32\n";  break;
-		case TokenType::u64Keyword:  std::cout << " Type: u64\n";  break;
-		case TokenType::i8Keyword:   std::cout << " Type: i8\n";   break;
-		case TokenType::i16Keyword:  std::cout << " Type: i16\n";  break;
-		case TokenType::i32Keyword:  std::cout << " Type: i32\n";  break;
-		case TokenType::i64Keyword:  std::cout << " Type: i64\n";  break;
-		case TokenType::f32Keyword:  std::cout << " Type: f32\n";  break;
-		case TokenType::f64Keyword:  std::cout << " Type: f64\n";  break;
-		case TokenType::charKeyword: std::cout << " Type: char\n"; break;
-		case TokenType::boolKeyword: std::cout << " Type: bool\n"; break;
+		case TokenType::u8Keyword:   std::cout << " : u8\n";   break;
+		case TokenType::u16Keyword:  std::cout << " : u16\n";  break;
+		case TokenType::u32Keyword:  std::cout << " : u32\n";  break;
+		case TokenType::u64Keyword:  std::cout << " : u64\n";  break;
+		case TokenType::i8Keyword:   std::cout << " : i8\n";   break;
+		case TokenType::i16Keyword:  std::cout << " : i16\n";  break;
+		case TokenType::i32Keyword:  std::cout << " : i32\n";  break;
+		case TokenType::i64Keyword:  std::cout << " : i64\n";  break;
+		case TokenType::f32Keyword:  std::cout << " : f32\n";  break;
+		case TokenType::f64Keyword:  std::cout << " : f64\n";  break;
+		case TokenType::charKeyword: std::cout << " : char\n"; break;
+		case TokenType::boolKeyword: std::cout << " : bool\n"; break;
 
 		// if the type token isn't a built in type, then its a user defined type so it will be stored in the tokens std::variant<std::string> value
 		default:
-			std::cout << " Type : " << std::get<std::string>(node.paramType.value) << std::endl;
+			std::cout << " : " << std::get<std::string>(node.paramType.value) << std::endl;
 	}
 }
 
-void ASTPrinter::visitArgument(ASTArgument& node)
+void ASTPrinter::visitArgument(ASTArgument& node, uint32_t depth)
 {
-	std::cout << "[Argument Node] value : ";
-	node.value->accept(*this);
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Argument Node]\n";
+	node.value->accept(*this, depth + 1);
 }
 
-void ASTPrinter::visitParamList(ASTParamList& node)
+void ASTPrinter::visitParamList(ASTParamList& node, uint32_t depth)
 {
-	std::cout << "[Params Start]\n";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Params Start]\n";
 
 	for (ASTParameter* param : node.params)
-		param->accept(*this);
+		param->accept(*this, depth + 1);
 
-	std::cout << "[Params End]\n";
+	std::cout << indent << "[Params End]\n";
 }
 
-void ASTPrinter::visitArgList(ASTArgList& node)
+void ASTPrinter::visitArgList(ASTArgList& node, uint32_t depth)
 {
-	std::cout << "[Args Start]\n";
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Args Start]\n";
 
 	for (ASTArgument* arg: node.args)
-		arg->accept(*this);
+		arg->accept(*this, depth + 1);
 
-	std::cout << "[Args End]\n";
+	std::cout << indent << "[Args End]\n";
+}
+
+void ASTPrinter::visitCast(ASTCast& node, uint32_t depth)
+{
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Cast Node]\n";
+	printTypeInfo(depth + 1, node.typeInfo);
+	node.expr->accept(*this, depth + 1);
 }

@@ -20,11 +20,16 @@ bool SymbolTable::isDefined(const std::string identifier)
 	return (symbols.find(identifier) != symbols.end());
 }
 
+Symbol* SymbolTable::getSymbol(const std::string identifier)
+{
+	return &symbols[identifier];
+}
+
 void SymbolTable::dumpSymbolTable()
 {
 	for (auto& symbol : symbols)
 	{
 		Symbol& sym = symbol.second;
-		std::cout << symbol.first << " : " << DebugUtils::typeKindToString(sym.type->type) << " [scope = " << sym.scope << ", slot index = " << sym.slotIndex << "]\n";
+		std::cout << symbol.first << " : " << DebugUtils::typeKindToString(sym.typeInfo->type) << " [scope = " << sym.scope << ", slot index = " << sym.slotIndex << "]\n";
 	}
 }

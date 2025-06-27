@@ -54,6 +54,8 @@ private:
 	TransitionTable transitionTable;
 	size_t tokenIndex;	// Always points to the next valid token to process
 	uint32_t lineNum;
+	uint32_t column;
+	uint32_t tokenStartCol;
 
 	std::vector<Token> tokens;
 	std::stringstream fileContents;

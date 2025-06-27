@@ -10,7 +10,7 @@ add_executable(hollow-lang src/main.cpp
                            src/ast_node.cpp
                            src/parser.cpp
                            src/compiler.cpp
-                           src/error_report.cpp
+                           src/diagnostic.cpp
                            src/ast_printer.cpp
                            src/token_stream.cpp
                            src/parser_tests.cpp
@@ -20,6 +20,12 @@ add_executable(hollow-lang src/main.cpp
                            src/ast_expr.cpp
                            src/ast_stmt.cpp
                            src/debug_utils.cpp
+                           src/semantic_utils.cpp
+                           src/bytecode_emitter.cpp
+                           src/bytecode_disassembler.cpp
+                           src/opcode_data.cpp
+                           src/type_checker.cpp
+                           src/type_conversions.cpp
                            include/lexer.h
                            include/token.h
                            include/transition_table.h
@@ -28,7 +34,7 @@ add_executable(hollow-lang src/main.cpp
                            include/ast_node.h
                            include/parser.h
                            include/compiler.h
-                           include/error_report.h
+                           include/diagnostic.h
                            include/ast_printer.h
                            include/token_stream.h
                            include/parser_tests.h
@@ -40,7 +46,15 @@ add_executable(hollow-lang src/main.cpp
                            include/environment.h
                            include/ast_expr.h
                            include/ast_stmt.h
-                           include/debug_utils.h)
+                           include/debug_utils.h
+                           include/semantic_utils.h
+                           include/bytecode_emitter.h
+                           include/opcodes.h
+                           include/bytecode_disassembler.h
+                           include/opcode_data.h
+                           include/type_checker.h
+                           include/type_conversions.h
+                           include/l_value.h)
 
 target_include_directories(hollow-lang PUBLIC include/)
 target_compile_definitions(hollow-lang PUBLIC TEST_PATH="${CMAKE_CURRENT_SOURCE_DIR}/tests")

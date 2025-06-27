@@ -1,0 +1,86 @@
+if (x)
+    x += 10;
+else
+    x += 5;
+
+if (true)
+{
+    x = 10;
+    y = x;
+}
+else
+{
+    x = ~y;
+    z = x;
+}
+
+if (true || !false)
+    x = ~(y * z);
+
+if (true)
+{
+
+}
+else
+{
+
+}
+
+if (x)
+{
+    if (y)
+    {
+        x = 10;
+        y = x;
+    }
+    else
+    {
+        x = ~y;
+        z = x;
+    }
+}
+else
+{
+    x = ~y;
+    z = x;
+}
+
+if (true)
+{
+    x = 10;
+    y = x;
+}
+else if (!false)
+{
+    x = 10;
+    y = x;
+}
+else
+{
+    x = 10;
+    y = x;
+}
+
+for (x : i32 = 0; x < 10; x++)
+{
+
+}
+
+for (;;)
+{
+
+}
+
+for (;;)
+{
+    for (;;)
+    {
+        
+    }
+}
+
+while (x < 10)
+{
+    x = 10;
+    y = x;
+}

@@ -9,6 +9,8 @@
 // forward declare any visitor classes needed
 class ASTPrinter;
 class SemanticAnalysis;
+class BytecodeEmitter;
+class TypeChecker;
 
 class ASTExpr;
 class ASTStmt;
@@ -18,8 +20,13 @@ class ASTNode
 {
 public:
 	virtual bool operator==(const ASTNode& other) const = 0 ;	// only used for testing the parser, should never be called when actually parsing
-	virtual void accept(ASTPrinter visitor) = 0;
+	virtual void accept(ASTPrinter visitor, uint32_t depth) = 0;
 	virtual void accept(SemanticAnalysis& visitor) = 0;
+	virtual void accept(BytecodeEmitter& visitor) = 0;
+	virtual void accept(TypeChecker& visitor) = 0;
+
+	uint32_t line;
+	uint32_t col;
 };
 
 // only used when testing the parser, this and the operator overload == should never be called when actually parsing
@@ -37,8 +44,10 @@ public:
 	ASTParameter(Token paramIdentifier, Token paramType);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	Token paramIdentifier;
 	Token paramType;
@@ -51,8 +60,10 @@ public:
 	ASTParamList() = default;
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	std::vector<ASTParameter*> params;
 };
@@ -63,8 +74,10 @@ public:
 	ASTArgList() = default;
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	std::vector<ASTArgument*> args;
 };

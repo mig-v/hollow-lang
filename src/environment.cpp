@@ -23,6 +23,18 @@ void Environment::popScope()
 	scopeDepth--;
 }
 
+Symbol* Environment::findSymbol(const std::string& identifier)
+{
+	// iterate through the scopes in reverse, innermost scopes take priority when looking for identifiers
+	for (auto it = scopes.rbegin(); it != scopes.rend(); it++)
+	{
+		if (it->isDefined(identifier))
+			return it->getSymbol(identifier);
+	}
+
+	return nullptr;
+}
+
 void Environment::dumpEnvironment()
 {
 	std::cout << "\n\n===== Dumping Environment =====\n";

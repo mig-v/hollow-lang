@@ -38,6 +38,14 @@ TransitionTable::TransitionTable()
 	transitions[(int)LexerState::StartState]['*'] = { LexerState::AsteriskState, TokenType::Asterisk };
 	transitions[(int)LexerState::StartState]['/'] = { LexerState::ForwardSlashState, TokenType::ForwardSlash };
 
+	// ForwardSlashState -> CommentState
+	transitions[(int)LexerState::ForwardSlashState]['/'] = { LexerState::CommentState, TokenType::Comment };
+
+	// any characters continue the comment until we see a newline character. This is also the only token that accepts spaces
+	fillAllEntry(LexerState::CommentState, LexerState::CommentState, TokenType::Comment);
+	transitions[(int)LexerState::CommentState][' '] = { LexerState::CommentState, TokenType::Comment };
+	transitions[(int)LexerState::CommentState]['\n'] = { LexerState::AcceptState, TokenType::Comment };
+
 	// StartState -> Bitwise Operators
 	transitions[(int)LexerState::StartState]['&'] = { LexerState::BitwiseAndState, TokenType::BitwiseAnd };
 	transitions[(int)LexerState::StartState]['|'] = { LexerState::BitwiseOrState, TokenType::BitwiseOr };

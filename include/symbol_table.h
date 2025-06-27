@@ -9,7 +9,7 @@ struct Symbol
 {
 	int scope;
 	int slotIndex;
-	TypeInfo* type;
+	TypeInfo* typeInfo;
 };
 
 class SymbolTable
@@ -21,6 +21,7 @@ public:
 	int declare(const std::string identifier, TypeInfo* typeInfo, int scopeDepth);
 	bool isDefined(const std::string identifier);
 	void dumpSymbolTable();
+	Symbol* getSymbol(const std::string identifier);
 
 private:
 	std::unordered_map<std::string, Symbol> symbols;

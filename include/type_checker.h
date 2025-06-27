@@ -3,16 +3,17 @@
 #include "ast_node.h"
 #include "ast_expr.h"
 #include "ast_stmt.h"
-#include "environment.h"
 #include "memory_arena.h"
 #include "diagnostic.h"
+#include "type_conversions.h"
+#include "l_value.h"
 
-class SemanticAnalysis
+class TypeChecker
 {
 public:
-	SemanticAnalysis();
-	void analyze(std::vector<ASTNode*>& ast, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter);
-	void printInfo();
+	TypeChecker();
+	~TypeChecker();
+	void typeCheck(std::vector<ASTNode*>& ast, MemoryArena* nodeArena, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter);
 
 	void visitIntLiteral(ASTIntLiteral& node);
 	void visitDoubleLiteral(ASTDoubleLiteral& node);
@@ -39,10 +40,19 @@ public:
 	void visitParamList(ASTParamList& node);
 	void visitArgList(ASTArgList& node);
 	void visitCast(ASTCast& node);
-
 private:
-	Environment env;
+	bool conversionIsLegal(const ConversionInfo& conversion, ASTNode* nodeCtx);
+	bool typesLegalForComparison(TypeKind lhs, TypeKind rhs);
+	bool typesLegalForArithmetic(TypeKind lhs, TypeKind rhs);
+	bool typesLegalForBitwise(TypeKind lhs, TypeKind rhs);
+	LValue isLValue(ASTExpr* expr);
+
+	void unifyBinaryOperands(ASTBinaryExpr& node, bool isComparisonOp);
+	ASTExpr* unwrapExpr(ASTExpr* expr);
+
+	MemoryArena* nodeArena;
 	MemoryArena* typeArena;
 	DiagnosticReporter* diagnosticReporter;
 	TypeInfo* functionCtx;
+	TypeConversions* typeConversions;
 };

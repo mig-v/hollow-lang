@@ -1,16 +1,16 @@
 #include <iostream>
 #include <chrono>
+#include <iomanip>
 
 #include "lexer.h"
 #include "lexer_tests.h"
-#include "parser.h"
 #include "parser_tests.h"
-#include "semantic_analysis.h"
+#include "compiler.h"
+
 
 int main()
 {
-	Lexer lexer;
-	Parser parser;
+	Compiler compiler;
 
 	LexerTests* lexerTests = new LexerTests();
 	ParserTests* parserTests = new ParserTests();
@@ -20,28 +20,10 @@ int main()
 	parserTests->runAll();
 
 	auto end = std::chrono::high_resolution_clock::now();
-
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
 	std::cout << "time taken: " << duration << " (ms)" << std::endl;
-
-	if (lexer.lexFile(TEST_PATH"/parser_tests/temp.hollow"))
-	{
-		lexer.dumpTokens();
-		parser.parse(lexer.getTokens());
-
-		//SemanticAnalysis semanticAnalysis;
-		//const std::vector<ASTNode*> ast = parser.getAst();
-
-		//for (ASTNode* node : ast)
-		//{
-		//	node->accept(semanticAnalysis);
-		//}
-
-		//semanticAnalysis.printInfo();
-		parser.printAST();
-		parser.printErrors();
-	}
+	
+	compiler.compile(TEST_PATH"/parser_tests/temp.hollow");
 
 	delete lexerTests;
 	delete parserTests;

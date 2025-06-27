@@ -2,22 +2,11 @@ control_flow_test.hollow ... PASSED
 
 function_test.hollow ... PASSED
 
+identifiers_test.hollow ... PASSED
+
 keywords_test.hollow ... PASSED
 
-(line 14) expected <Semicolon>, got <charKeyword>
-(line 15) expected <charKeyword>, got <Identifier>
-(line 15) expected <Identifier>, got <Assign>
-(line 15) expected <Assign>, got <Invalid>
-(line 15) expected <Invalid>, got <Semicolon>
-(line 15) expected <Identifier>, got <charKeyword>
-(line 15) expected <Invalid>, got <Identifier>
-(line 16) expected <charKeyword>, got <Assign>
-(line 16) expected <Identifier>, got <Invalid>
-(line 16) expected <Assign>, got <Semicolon>
-(line 16) expected <Invalid>, got <EOF>
-literals_test.hollow ... FAILED
+literals_test.hollow ... PASSED
 
-(line 18) expected , got <Semicolon>
-(line 19) expected , got <EOF>
-operators_test.hollow ... FAILED
+operators_test.hollow ... PASSED
 

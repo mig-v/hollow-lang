@@ -3,6 +3,8 @@
 #include "ast_stmt.h"
 #include "ast_printer.h"
 #include "semantic_analysis.h"
+#include "bytecode_emitter.h"
+#include "type_checker.h"
 
 ASTIntLiteral::ASTIntLiteral(uint64_t value)
 {
@@ -18,12 +20,22 @@ bool ASTIntLiteral::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTIntLiteral::accept(ASTPrinter visitor)
+void ASTIntLiteral::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitIntLiteral(*this, depth);
+}
+
+void ASTIntLiteral::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitIntLiteral(*this);
 }
 
-void ASTIntLiteral::accept(SemanticAnalysis& visitor)
+void ASTIntLiteral::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitIntLiteral(*this);
+}
+
+void ASTIntLiteral::accept(TypeChecker& visitor)
 {
 	visitor.visitIntLiteral(*this);
 }
@@ -37,17 +49,29 @@ ASTDoubleLiteral::ASTDoubleLiteral(double value)
 bool ASTDoubleLiteral::operator==(const ASTNode& other) const
 {
 	if (const ASTDoubleLiteral* node = dynamic_cast<const ASTDoubleLiteral*>(&other))
-		return node->value == this->value;
+	{
+		return std::fabs(node->value - this->value) < std::numeric_limits<double>::epsilon();
+	}
 
 	return false;
 }
 
-void ASTDoubleLiteral::accept(ASTPrinter visitor)
+void ASTDoubleLiteral::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitDoubleLiteral(*this, depth);
+}
+
+void ASTDoubleLiteral::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitDoubleLiteral(*this);
 }
 
-void ASTDoubleLiteral::accept(SemanticAnalysis& visitor)
+void ASTDoubleLiteral::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitDoubleLiteral(*this);
+}
+
+void ASTDoubleLiteral::accept(TypeChecker& visitor)
 {
 	visitor.visitDoubleLiteral(*this);
 }
@@ -66,12 +90,22 @@ bool ASTCharLiteral::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTCharLiteral::accept(ASTPrinter visitor)
+void ASTCharLiteral::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitCharLiteral(*this, depth);
+}
+
+void ASTCharLiteral::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitCharLiteral(*this);
 }
 
-void ASTCharLiteral::accept(SemanticAnalysis& visitor)
+void ASTCharLiteral::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitCharLiteral(*this);
+}
+
+void ASTCharLiteral::accept(TypeChecker& visitor)
 {
 	visitor.visitCharLiteral(*this);
 }
@@ -90,9 +124,9 @@ bool ASTBoolLiteral::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTBoolLiteral::accept(ASTPrinter visitor)
+void ASTBoolLiteral::accept(ASTPrinter visitor, uint32_t depth)
 {
-	visitor.visitBoolLiteral(*this);
+	visitor.visitBoolLiteral(*this, depth);
 }
 
 void ASTBoolLiteral::accept(SemanticAnalysis& visitor)
@@ -100,33 +134,55 @@ void ASTBoolLiteral::accept(SemanticAnalysis& visitor)
 	visitor.visitBoolLiteral(*this);
 }
 
-ASTVariable::ASTVariable(Token identifier)
+void ASTBoolLiteral::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitBoolLiteral(*this);
+}
+
+void ASTBoolLiteral::accept(TypeChecker& visitor)
+{
+	visitor.visitBoolLiteral(*this);
+}
+
+ASTIdentifier::ASTIdentifier(Token identifier)
 {
 	this->identifier = identifier;
 	this->typeInfo = nullptr;
+	this->scope = 0;
+	this->slotIndex = 0;
 }
 
-bool ASTVariable::operator==(const ASTNode& other) const
+bool ASTIdentifier::operator==(const ASTNode& other) const
 {
-	if (const ASTVariable* node = dynamic_cast<const ASTVariable*>(&other))
+	if (const ASTIdentifier* node = dynamic_cast<const ASTIdentifier*>(&other))
 		return ((std::get<std::string>(node->identifier.value) == std::get<std::string>(this->identifier.value)));
 
 	return false;
 }
 
-void ASTVariable::accept(ASTPrinter visitor)
+void ASTIdentifier::accept(ASTPrinter visitor, uint32_t depth)
 {
-	visitor.visitVariable(*this);
+	visitor.visitIdentifier(*this, depth);
 }
 
-void ASTVariable::accept(SemanticAnalysis& visitor)
+void ASTIdentifier::accept(SemanticAnalysis& visitor)
 {
-	visitor.visitVariable(*this);
+	visitor.visitIdentifier(*this);
 }
 
-ASTAssign::ASTAssign(Token identifier, Token op, ASTExpr* value)
+void ASTIdentifier::accept(BytecodeEmitter& visitor)
 {
-	this->identifier = identifier;
+	visitor.visitIdentifier(*this);
+}
+
+void ASTIdentifier::accept(TypeChecker& visitor)
+{
+	visitor.visitIdentifier(*this);
+}
+
+ASTAssign::ASTAssign(ASTExpr* assignee, Token op, ASTExpr* value)
+{
+	this->assignee = assignee;
 	this->op = op;
 	this->value = value;
 	this->typeInfo = nullptr;
@@ -136,7 +192,7 @@ bool ASTAssign::operator==(const ASTNode& other) const
 {
 	if (const ASTAssign* node = dynamic_cast<const ASTAssign*>(&other))
 	{
-		return ((std::get<std::string>(node->identifier.value) == std::get<std::string>(this->identifier.value))
+		return ((astEqual(node->assignee, this->assignee))
 			&& (node->op.type == this->op.type)
 			&& (astEqual(node->value, this->value)));
 	}
@@ -144,9 +200,9 @@ bool ASTAssign::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTAssign::accept(ASTPrinter visitor)
+void ASTAssign::accept(ASTPrinter visitor, uint32_t depth)
 {
-	visitor.visitAssign(*this);
+	visitor.visitAssign(*this, depth);
 }
 
 void ASTAssign::accept(SemanticAnalysis& visitor)
@@ -154,10 +210,20 @@ void ASTAssign::accept(SemanticAnalysis& visitor)
 	visitor.visitAssign(*this);
 }
 
+void ASTAssign::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitAssign(*this);
+}
+
+void ASTAssign::accept(TypeChecker& visitor)
+{
+	visitor.visitAssign(*this);
+}
+
 ASTLogical::ASTLogical(ASTExpr* lhs, Token logicalOperator, ASTExpr* rhs)
 {
 	this->lhs = lhs;
-	this->logicalOperator;
+	this->logicalOperator = logicalOperator;
 	this->rhs = rhs;
 	this->typeInfo = nullptr;
 }
@@ -174,12 +240,22 @@ bool ASTLogical::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTLogical::accept(ASTPrinter visitor)
+void ASTLogical::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitLogical(*this, depth);
+}
+
+void ASTLogical::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitLogical(*this);
 }
 
-void ASTLogical::accept(SemanticAnalysis& visitor)
+void ASTLogical::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitLogical(*this);
+}
+
+void ASTLogical::accept(TypeChecker& visitor)
 {
 	visitor.visitLogical(*this);
 }
@@ -204,12 +280,22 @@ bool ASTBinaryExpr::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTBinaryExpr::accept(ASTPrinter visitor)
+void ASTBinaryExpr::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitBinaryExpr(*this, depth);
+}
+
+void ASTBinaryExpr::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitBinaryExpr(*this);
 }
 
-void ASTBinaryExpr::accept(SemanticAnalysis& visitor)
+void ASTBinaryExpr::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitBinaryExpr(*this);
+}
+
+void ASTBinaryExpr::accept(TypeChecker& visitor)
 {
 	visitor.visitBinaryExpr(*this);
 }
@@ -219,6 +305,7 @@ ASTUnaryExpr::ASTUnaryExpr(Token op, ASTExpr* expr)
 	this->op = op;
 	this->expr = expr;
 	this->typeInfo = nullptr;
+	this->slotIndex = 0;
 }
 
 bool ASTUnaryExpr::operator==(const ASTNode& other) const
@@ -232,9 +319,9 @@ bool ASTUnaryExpr::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTUnaryExpr::accept(ASTPrinter visitor)
+void ASTUnaryExpr::accept(ASTPrinter visitor, uint32_t depth)
 {
-	visitor.visitUnaryExpr(*this);
+	visitor.visitUnaryExpr(*this, depth);
 }
 
 void ASTUnaryExpr::accept(SemanticAnalysis& visitor)
@@ -242,7 +329,17 @@ void ASTUnaryExpr::accept(SemanticAnalysis& visitor)
 	visitor.visitUnaryExpr(*this);
 }
 
-ASTCall::ASTCall(ASTNode* callee, ASTArgList* args)
+void ASTUnaryExpr::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitUnaryExpr(*this);
+}
+
+void ASTUnaryExpr::accept(TypeChecker& visitor)
+{
+	visitor.visitUnaryExpr(*this);
+}
+
+ASTCall::ASTCall(ASTExpr* callee, ASTArgList* args)
 {
 	this->callee = callee;
 	this->args = args;
@@ -260,12 +357,22 @@ bool ASTCall::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTCall::accept(ASTPrinter visitor)
+void ASTCall::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitCall(*this, depth);
+}
+
+void ASTCall::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitCall(*this);
 }
 
-void ASTCall::accept(SemanticAnalysis& visitor)
+void ASTCall::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitCall(*this);
+}
+
+void ASTCall::accept(TypeChecker& visitor)
 {
 	visitor.visitCall(*this);
 }
@@ -284,12 +391,22 @@ bool ASTGroupExpr::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTGroupExpr::accept(ASTPrinter visitor)
+void ASTGroupExpr::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitGroupExpr(*this, depth);
+}
+
+void ASTGroupExpr::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitGroupExpr(*this);
 }
 
-void ASTGroupExpr::accept(SemanticAnalysis& visitor)
+void ASTGroupExpr::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitGroupExpr(*this);
+}
+
+void ASTGroupExpr::accept(TypeChecker& visitor)
 {
 	visitor.visitGroupExpr(*this);
 }
@@ -299,6 +416,7 @@ ASTPostfix::ASTPostfix(ASTExpr* expr, Token op)
 	this->expr = expr;
 	this->op = op;
 	this->typeInfo = nullptr;
+	this->slotIndex = 0;
 }
 
 bool ASTPostfix::operator==(const ASTNode& other) const
@@ -312,12 +430,22 @@ bool ASTPostfix::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTPostfix::accept(ASTPrinter visitor)
+void ASTPostfix::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitPostfix(*this, depth);
+}
+
+void ASTPostfix::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitPostfix(*this);
 }
 
-void ASTPostfix::accept(SemanticAnalysis& visitor)
+void ASTPostfix::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitPostfix(*this);
+}
+
+void ASTPostfix::accept(TypeChecker& visitor)
 {
 	visitor.visitPostfix(*this);
 }
@@ -336,12 +464,55 @@ bool ASTArgument::operator==(const ASTNode& other) const
 	return false;
 }
 
-void ASTArgument::accept(ASTPrinter visitor)
+void ASTArgument::accept(ASTPrinter visitor, uint32_t depth)
 {
-	visitor.visitArgument(*this);
+	visitor.visitArgument(*this, depth);
 }
 
 void ASTArgument::accept(SemanticAnalysis& visitor)
 {
 	visitor.visitArgument(*this);
+}
+
+void ASTArgument::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitArgument(*this);
+}
+
+void ASTArgument::accept(TypeChecker& visitor)
+{
+	visitor.visitArgument(*this);
+}
+
+ASTCast::ASTCast(ASTExpr* expr)
+{
+	this->expr = expr;
+}
+
+bool ASTCast::operator==(const ASTNode& other) const
+{
+	if (const ASTCast* node = dynamic_cast<const ASTCast*>(&other))
+		return (astEqual(node->expr, this->expr));
+
+	return false;
+}
+
+void ASTCast::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitCast(*this, depth);
+}
+
+void ASTCast::accept(SemanticAnalysis& visitor)
+{
+	visitor.visitCast(*this);
+}
+
+void ASTCast::accept(BytecodeEmitter& visitor)
+{
+	visitor.visitCast(*this);
+}
+
+void ASTCast::accept(TypeChecker& visitor)
+{
+	visitor.visitCast(*this);
 }

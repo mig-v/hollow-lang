@@ -1,16 +1,15 @@
-i32 x = 1000;
-f32 f = 100.032;
-f64 float = .10020;
-char a = '\n';
-char b = '\t';
-char c = '\b';
-char d = '\r';
-char f = '\"';
-char g = '\\';
-char h = '\'';
-char i = '\0';
-char j = '\v';
-char k = '\f';
-char invalid = 'ab';
-char invalid2 = '\\ab';
-char invalid3 = '\na';
+1000
+100.0
+100.032
+'a'
+'\n'
+'\t'
+'\b'
+'\r'
+'\"'
+'\\'
+'\0'
+'\v'
+'\f'
+true
+false

@@ -16,8 +16,10 @@ public:
 	ASTExprStmt(ASTExpr* expression);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* expression;
 };
@@ -28,8 +30,10 @@ public:
 	ASTVarDecl(TokenType varType, Token varIdentifier, ASTExpr* initialization);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	TokenType varType;
 	Token varIdentifier;
@@ -47,8 +51,10 @@ public:
 	ASTBlock();
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	std::vector<ASTStmt*> statements;
 
@@ -63,8 +69,10 @@ public:
 	ASTFuncDecl(Token funcIdentifier, Token returnType, ASTParamList* params, ASTBlock* body);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	Token funcIdentifier;
 	Token returnType;
@@ -79,8 +87,10 @@ public:
 	ASTReturn(ASTExpr* returnVal);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* returnVal;
 };
@@ -91,12 +101,29 @@ public:
 	ASTForLoop(ASTStmt* initializer, ASTExpr* condition, ASTExpr* increment, ASTBlock* body);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTStmt* initializer;
 	ASTExpr* condition;
 	ASTExpr* increment;
+	ASTBlock* body;
+};
+
+class ASTWhileLoop : public ASTStmt
+{
+public:
+	ASTWhileLoop(ASTExpr* condition, ASTBlock* body);
+
+	bool operator==(const ASTNode& other) const;
+	void accept(ASTPrinter visitor, uint32_t depth);
+	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
+
+	ASTExpr* condition;
 	ASTBlock* body;
 };
 
@@ -106,8 +133,10 @@ public:
 	ASTIfStatement(ASTExpr* condition, ASTStmt* trueBranch, ASTStmt* falseBranch);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* condition;
 	ASTStmt* trueBranch;

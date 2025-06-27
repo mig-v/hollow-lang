@@ -11,6 +11,7 @@ public:
 	inline int getScopeDepth() const { return scopeDepth; }
 	void pushScope();
 	void popScope();
+	Symbol* findSymbol(const std::string& identifier);
 	void dumpEnvironment();
 
 private:

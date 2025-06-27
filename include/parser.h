@@ -6,20 +6,19 @@
 #include "ast_expr.h"
 #include "ast_stmt.h"
 #include "token_stream.h"
-#include "error_report.h"
+#include "diagnostic.h"
 #include "memory_arena.h"
 
 class Parser
 {
 public:
-	Parser() = default;
+	Parser();
 
-	void parse(std::vector<Token>& tokens);
+	void parse(std::vector<Token>& tokens, MemoryArena* nodeArena, DiagnosticReporter* diagnosticReporter);
 	void reset();
 	void printAST();
-	void printErrors();
 
-	inline const std::vector<ASTNode*>& getAst() const { return ast; }
+	inline std::vector<ASTNode*>& getAst() { return ast; }
 
 private:
 	ASTStmt* declaration();
@@ -28,6 +27,7 @@ private:
 	ASTStmt* statement();
 	ASTStmt* forStatement();
 	ASTStmt* ifStatement();
+	ASTStmt* whileStatement();
 	ASTBlock* block();
 	ASTStmt* returnStatement();
 	ASTStmt* expressionStatement();
@@ -36,10 +36,10 @@ private:
 	ASTExpr* assignment();
 	ASTExpr* logicalOr();
 	ASTExpr* logicalAnd();
+	ASTExpr* equality();
 	ASTExpr* bitwiseOr();
 	ASTExpr* bitwiseXor();
 	ASTExpr* bitwiseAnd();
-	ASTExpr* equality();
 	ASTExpr* comparison();
 	ASTExpr* bitwiseShift();
 	ASTExpr* term();
@@ -48,7 +48,7 @@ private:
 	ASTExpr* postfix();
 	ASTExpr* primary();
 
-	ASTExpr* parseFuncArgs(ASTNode* callee);
+	ASTExpr* parseFuncArgs(ASTExpr* callee);
 	ASTParamList* parseFuncParams();
 
 	void assertCurrent(TokenType type, const std::string& errorMsg);	// assert the top token matches 'type', otherwise report a syntax error
@@ -56,11 +56,11 @@ private:
 	void throwError(const std::string& errorMsg);
 	void synchronize();
 
-	MemoryArena arena;
+	MemoryArena* arena;
 	TokenStream tokenStream;
+	DiagnosticReporter* diagnosticReporter;
 
 	std::vector<ASTNode*> ast;
-	std::vector<ErrorReport> parseErrors;
 
 	bool inFuncDecl;
 };

@@ -14,7 +14,8 @@ enum class TypeKind
 	Struct,
 
 	// for error handling
-	Unknown
+	Unknown,
+	TypeCount
 };
 
 struct TypeInfo

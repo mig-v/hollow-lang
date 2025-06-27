@@ -7,6 +7,8 @@
 
 #include "parser.h"
 #include "lexer.h"
+#include "memory_arena.h"
+#include "diagnostic.h"
 
 struct ParserTestInfo
 {
@@ -26,6 +28,8 @@ private:
 
 	Lexer lexer;
 	Parser parser;
+	MemoryArena arena;
+	DiagnosticReporter reporter;
 	std::map<std::string, ParserTestInfo> testSuite;
 	std::ofstream logFile;
 };

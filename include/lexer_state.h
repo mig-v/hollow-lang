@@ -54,6 +54,7 @@ enum class LexerState
 	MinusState,
 	AsteriskState,
 	ForwardSlashState,
+	CommentState,
 	EOFState,
 	NumLexerStates,
 };

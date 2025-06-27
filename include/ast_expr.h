@@ -14,8 +14,10 @@ public:
 	ASTIntLiteral(uint64_t value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	uint64_t value;
 };
@@ -26,8 +28,10 @@ public:
 	ASTDoubleLiteral(double value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	double value;
 };
@@ -38,8 +42,10 @@ public:
 	ASTCharLiteral(char value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	char value;
 };
@@ -50,34 +56,42 @@ public:
 	ASTBoolLiteral(bool value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	bool value;
 };
 
-class ASTVariable : public ASTExpr
+class ASTIdentifier : public ASTExpr
 {
 public:
-	ASTVariable(Token identifier);
+	ASTIdentifier(Token identifier);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	Token identifier;
+	int scope;
+	int slotIndex;
 };
 
 class ASTAssign : public ASTExpr
 {
 public:
-	ASTAssign(Token identifier, Token op, ASTExpr* value);
+	ASTAssign(ASTExpr* assignee, Token op, ASTExpr* value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
-	Token identifier;
+	ASTExpr* assignee;
 	Token op;
 	ASTExpr* value;
 };
@@ -88,8 +102,10 @@ public:
 	ASTLogical(ASTExpr* lhs, Token logicalOperator, ASTExpr* rhs);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* lhs;
 	Token logicalOperator;
@@ -102,8 +118,10 @@ public:
 	ASTBinaryExpr(ASTExpr* lhs, Token op, ASTExpr* rhs);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* lhs;
 	Token op;
@@ -116,23 +134,28 @@ public:
 	ASTUnaryExpr(Token op, ASTExpr* expr);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	Token op;
 	ASTExpr* expr;
+	int slotIndex;	// only applicable when the UnaryExpr is something like ++x or --x
 };
 
 class ASTCall : public ASTExpr
 {
 public:
-	ASTCall(ASTNode* callee, ASTArgList* args);
+	ASTCall(ASTExpr* callee, ASTArgList* args);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
-	ASTNode* callee;
+	ASTExpr* callee;
 	ASTArgList* args;
 };
 
@@ -142,8 +165,10 @@ public:
 	ASTGroupExpr(ASTExpr* expr);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* expr;
 };
@@ -154,11 +179,17 @@ public:
 	ASTPostfix(ASTExpr* expr, Token op);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* expr;
 	Token op;
+
+	// will need to add more when array access is a thing, and pointers, structs, etc. 
+	// This field can prob just become an LValue struct from l_value.h
+	int slotIndex;
 };
 
 class ASTArgument : public ASTExpr
@@ -167,8 +198,23 @@ public:
 	ASTArgument(ASTExpr* value);
 
 	bool operator==(const ASTNode& other) const;
-	void accept(ASTPrinter visitor);
+	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
 
 	ASTExpr* value;
+};
+
+class ASTCast : public ASTExpr
+{
+public:
+	ASTCast(ASTExpr* expr);
+	bool operator==(const ASTNode& other) const;
+	void accept(ASTPrinter visitor, uint32_t depth);
+	void accept(SemanticAnalysis& visitor);
+	void accept(BytecodeEmitter& visitor);
+	void accept(TypeChecker& visitor);
+
+	ASTExpr* expr;
 };

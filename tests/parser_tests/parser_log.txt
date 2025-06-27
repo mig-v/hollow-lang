@@ -1,2 +1,12 @@
+binary_expressions_test.hollow ... PASSED
+
+control_flow_test.hollow ... PASSED
+
+functions_test.hollow ... PASSED
+
 literals_test.hollow ... PASSED
+
+unary_expressions_test.hollow ... PASSED
+
+variables_test.hollow ... PASSED
 

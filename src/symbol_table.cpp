@@ -3,24 +3,34 @@
 
 #include <iostream>
 
-SymbolTable::SymbolTable()
+SymbolTable::SymbolTable(int parentScopeSlotOffset)
 {
+	std::cout << "making symbol table with parent offset = " << parentScopeSlotOffset << std::endl;
 	this->nextSlot = 0;
+	this->parentScopeSlotOffset = parentScopeSlotOffset;
 }
 
-int SymbolTable::declare(const std::string identifier, TypeInfo* typeInfo, int scopeDepth)
+int SymbolTable::declareVar(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth)
 {
-	Symbol symbol = { scopeDepth, nextSlot++, typeInfo };
+	int slot = nextSlot++;
+	slot += parentScopeSlotOffset;
+	Symbol symbol = { scopeDepth, slot, typeInfo };
 	symbols[identifier] = symbol;
 	return symbol.slotIndex;
 }
 
-bool SymbolTable::isDefined(const std::string identifier)
+void SymbolTable::declareFunc(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth)
+{
+	Symbol symbol{ scopeDepth, -1, typeInfo };
+	symbols[identifier] = symbol;
+}
+
+bool SymbolTable::isDefined(const std::string& identifier)
 {
 	return (symbols.find(identifier) != symbols.end());
 }
 
-Symbol* SymbolTable::getSymbol(const std::string identifier)
+Symbol* SymbolTable::getSymbol(const std::string& identifier)
 {
 	return &symbols[identifier];
 }

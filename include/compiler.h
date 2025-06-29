@@ -6,6 +6,7 @@
 #include "type_checker.h"
 #include "bytecode_emitter.h"
 #include "bytecode_disassembler.h"
+#include "vm.h"
 #include "memory_arena.h"
 #include "diagnostic.h"
 
@@ -30,4 +31,5 @@ private:
 	TypeChecker* typeChecker;
 	BytecodeEmitter* bytecodeEmitter;
 	BytecodeDisassembler* bytecodeDisassembler;
+	VM* vm;
 };

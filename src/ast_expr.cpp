@@ -186,6 +186,7 @@ ASTAssign::ASTAssign(ASTExpr* assignee, Token op, ASTExpr* value)
 	this->op = op;
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->slotIndex = 0;
 }
 
 bool ASTAssign::operator==(const ASTNode& other) const

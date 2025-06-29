@@ -7,7 +7,6 @@ TypeChecker::TypeChecker()
 	this->nodeArena = nullptr;
 	this->typeArena = nullptr;
 	this->diagnosticReporter = nullptr;
-	this->functionCtx = nullptr;
 	this->typeConversions = nullptr;
 }
 
@@ -189,10 +188,12 @@ void TypeChecker::visitVarDecl(ASTVarDecl& node)
 
 void TypeChecker::visitFuncDecl(ASTFuncDecl& node)
 {
-	functionCtx = node.typeInfo;
+	//functionCtx = node.typeInfo;
+	functionCtxStack.push_back(node.typeInfo);
 	node.params->accept(*this);
 	node.body->accept(*this);
-	functionCtx = nullptr;
+	functionCtxStack.pop_back();
+	//functionCtx = nullptr;
 }
 
 void TypeChecker::visitIdentifier(ASTIdentifier& node)
@@ -230,20 +231,20 @@ void TypeChecker::visitAssign(ASTAssign& node)
 
 void TypeChecker::visitReturn(ASTReturn& node)
 {
-	if (!functionCtx)
+	if (functionCtxStack.size() == 0)
 		return;
 
 	// if there's no return val, that means the function returns void, check to make sure the signature returns void
 	if (!node.returnVal)
 	{
-		if (functionCtx->returnType->type != TypeKind::Void)
+		if (functionCtxStack.back()->returnType->type != TypeKind::Void)
 			diagnosticReporter->reportDiagnostic("missing return statement from function expecting non-void return type", DiagnosticLevel::Error, DiagnosticType::IncompatibleReturnType, ErrorPhase::TypeChecker, node.line, node.col);
 
 		return;
 	}
 
 	node.returnVal->accept(*this);
-	ConversionInfo conversion = typeConversions->getConversion(node.returnVal->typeInfo->type, functionCtx->returnType->type);
+	ConversionInfo conversion = typeConversions->getConversion(node.returnVal->typeInfo->type, functionCtxStack.back()->returnType->type);
 
 	// if the types of return type and function declarred return type are the same or illegal, return since there's no more work to be done
 	if (conversion.type == ConversionType::SameType || !conversionIsLegal(conversion, &node))
@@ -253,7 +254,7 @@ void TypeChecker::visitReturn(ASTReturn& node)
 	ASTExpr* expr = node.returnVal;
 	ASTCast* implicitCast = nodeArena->alloc<ASTCast>(expr);
 	implicitCast->typeInfo = typeArena->alloc<TypeInfo>();
-	implicitCast->typeInfo->type = functionCtx->returnType->type;
+	implicitCast->typeInfo->type = functionCtxStack.back()->returnType->type;
 	node.returnVal = implicitCast;
 }
 
@@ -416,13 +417,14 @@ void TypeChecker::visitCall(ASTCall& node)
 	if (node.callee->typeInfo->type != TypeKind::Function)
 	{
 		diagnosticReporter->reportDiagnostic("expression is not callable, must be function type", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::TypeChecker, node.line, node.col);
-		node.typeInfo->type = TypeKind::Unknown;
 		return;
 	}
 
-	functionCtx = node.callee->typeInfo;
+	//functionCtx = node.callee->typeInfo;
+	functionCtxStack.push_back(node.callee->typeInfo);
 	node.args->accept(*this);
-	functionCtx = nullptr;
+	functionCtxStack.pop_back();
+	//functionCtx = nullptr;
 }
 
 void TypeChecker::visitGroupExpr(ASTGroupExpr& node)
@@ -482,15 +484,15 @@ void TypeChecker::visitParamList(ASTParamList& node)
 
 void TypeChecker::visitArgList(ASTArgList& node) 
 {
-	if (!functionCtx)
+	if (functionCtxStack.size() == 0)
 		return;
 	
-	if (node.args.size() != functionCtx->paramTypes.size())
+	if (node.args.size() != functionCtxStack.back()->paramTypes.size())
 	{
 		std::string message = "mismatched function argument count, expected ";
-		message += functionCtx->paramTypes.size();
+		message += std::to_string(functionCtxStack.back()->paramTypes.size());
 		message += " but got ";
-		message += node.args.size();
+		message += std::to_string(node.args.size());
 		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, ErrorPhase::TypeChecker, node.line, node.col);
 		return;
 	}
@@ -499,7 +501,7 @@ void TypeChecker::visitArgList(ASTArgList& node)
 	{
 		node.args[i]->accept(*this);
 		
-		ConversionInfo conversion = typeConversions->getConversion(node.args[i]->typeInfo->type, functionCtx->paramTypes[i]->type);
+		ConversionInfo conversion = typeConversions->getConversion(node.args[i]->typeInfo->type, functionCtxStack.back()->paramTypes[i]->type);
 
 		// if the arg is convertible or the same type to the expected param type, continue to next iteration
 		if (conversion.type == ConversionType::SameType || !conversionIsLegal(conversion, &node))
@@ -509,7 +511,7 @@ void TypeChecker::visitArgList(ASTArgList& node)
 		ASTExpr* expr = node.args[i]->value;
 		ASTCast* implicitCast = nodeArena->alloc<ASTCast>(expr);
 		implicitCast->typeInfo = typeArena->alloc<TypeInfo>();
-		implicitCast->typeInfo->type = functionCtx->paramTypes[i]->type;
+		implicitCast->typeInfo->type = functionCtxStack.back()->paramTypes[i]->type;
 		node.args[i]->value = implicitCast;
 	}
 }

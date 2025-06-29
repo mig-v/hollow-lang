@@ -13,6 +13,7 @@ public:
 	SemanticAnalysis();
 	void analyze(std::vector<ASTNode*>& ast, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter);
 	void printInfo();
+	int getGlobalVarCount();
 
 	void visitIntLiteral(ASTIntLiteral& node);
 	void visitDoubleLiteral(ASTDoubleLiteral& node);
@@ -44,5 +45,5 @@ private:
 	Environment env;
 	MemoryArena* typeArena;
 	DiagnosticReporter* diagnosticReporter;
-	TypeInfo* functionCtx;
+	std::vector<TypeInfo*> functionCtxStack; // used for nested calls like add(10, getNum()); we need a stack to deal with this
 };

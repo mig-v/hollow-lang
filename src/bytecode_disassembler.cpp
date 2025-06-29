@@ -176,6 +176,7 @@ const char* BytecodeDisassembler::opcodeToStr(Opcode opcode)
         {Opcode::POP, "POP"},
         {Opcode::DUP, "DUP"},
         {Opcode::SWAP, "SWAP"},
+        {Opcode::HALT, "HALT"},
 
         {Opcode::ADD_I8, "ADD_I8"},
         {Opcode::ADD_I16, "ADD_I16"},
@@ -315,8 +316,14 @@ const char* BytecodeDisassembler::opcodeToStr(Opcode opcode)
         {Opcode::LOGICAL_OR, "LOGICAL_OR"},
         {Opcode::LOGICAL_NOT, "LOGICAL_NOT"},
 
-        {Opcode::INC, "INC"},
-        {Opcode::DEC, "DEC"},
+        { Opcode::INC_I8, "INC_I8"},
+        { Opcode::INC_I16, "INC_I16" },
+        { Opcode::INC_I32, "INC_I32" },
+        { Opcode::INC_I64, "INC_I64" },
+        { Opcode::INC_U8, "INC_U8" },
+        { Opcode::INC_U16, "INC_U16" },
+        { Opcode::INC_U32, "INC_U32" },
+        { Opcode::INC_U64, "INC_U64" },
 
         { Opcode::NOT_I8, "NOT_I8" },
         { Opcode::NOT_I16, "NOT_I16" },
@@ -370,7 +377,17 @@ const char* BytecodeDisassembler::opcodeToStr(Opcode opcode)
         { Opcode::SHR_U8, "SHR_U8" },
         { Opcode::SHR_U16, "SHR_U16" },
         { Opcode::SHR_U32, "SHR_U32" },
-        { Opcode::SHR_U64, "SHR_U64" }
+        { Opcode::SHR_U64, "SHR_U64" },
+
+        { Opcode::DEC_I8, "DEC_I8" },
+        { Opcode::DEC_I16, "DEC_I16" },
+        { Opcode::DEC_I32, "DEC_I32" },
+        { Opcode::DEC_I64, "DEC_I64" },
+        { Opcode::DEC_U8, "DEC_U8" },
+        { Opcode::DEC_U16, "DEC_U16" },
+        { Opcode::DEC_U32, "DEC_U32" },
+        { Opcode::DEC_U64, "DEC_U64" },
+
     };
 
     auto it = opcodeLookup.find(opcode);

@@ -55,6 +55,11 @@ opcode_data = {
     "JMP_IF_TRUE"  : [(2, "U16")],
     "CALL"         : [(2, "U16"), (1, "U8")],
     "RET"          : [],
+    "POP"          : [],
+    "DUP"          : [],
+    "SWAP"          : [],
+    "HALT"          : [],
+
     
     "ADD_I8"  : [],
     "ADD_I16" : [],
@@ -189,6 +194,82 @@ opcode_data = {
     "LTE_F32" : [],
     "LTE_F64" : [],
     "LTE_CHAR" : [],
+
+    "LOGICAL_AND" : [],
+    "LOGICAL_OR" : [],
+    "LOGICAL_NOT" : [],
+
+    "INC_I8" : [],
+    "INC_I16" : [],
+    "INC_I32" : [],
+    "INC_I64" : [],
+    "INC_U8" : [],
+    "INC_U16" : [],
+    "INC_U32" : [],
+    "INC_U64" : [],
+
+    "NOT_I8" : [],
+    "NOT_I16" : [],
+    "NOT_I32" : [],
+    "NOT_I64" : [],
+    "NOT_U8" : [],
+    "NOT_U16" : [],
+    "NOT_U32" : [],
+    "NOT_U64" : [],
+
+    "AND_I8" : [],
+    "AND_I16" : [],
+    "AND_I32" : [],
+    "AND_I64" : [],
+    "AND_U8" : [],
+    "AND_U16" : [],
+    "AND_U32" : [],
+    "AND_U64" : [],
+
+    "OR_I8" : [],
+    "OR_I16" : [],
+    "OR_I32" : [],
+    "OR_I64" : [],
+    "OR_U8" : [],
+    "OR_U16" : [],
+    "OR_U32" : [],
+    "OR_U64" : [],
+
+    "XOR_I8" : [],
+    "XOR_I16" : [],
+    "XOR_I32" : [],
+    "XOR_I64" : [],
+    "XOR_U8" : [],
+    "XOR_U16" : [],
+    "XOR_U32" : [],
+    "XOR_U64" : [],
+
+    "SHL_I8" : [],
+    "SHL_I16" : [],
+    "SHL_I32" : [],
+    "SHL_I64" : [],
+    "SHL_U8" : [],
+    "SHL_U16" : [],
+    "SHL_U32" : [],
+    "SHL_U64" : [],
+
+    "SHR_I8" : [],
+    "SHR_I16" : [],
+    "SHR_I32" : [],
+    "SHR_I64" : [],
+    "SHR_U8" : [],
+    "SHR_U16" : [],
+    "SHR_U32" : [],
+    "SHR_U64" : [],
+
+    "DEC_I8" : [],
+    "DEC_I16" : [],
+    "DEC_I32" : [],
+    "DEC_I64" : [],
+    "DEC_U8" : [],
+    "DEC_U16" : [],
+    "DEC_U32" : [],
+    "DEC_U64" : [],
 }
 
 def print_empty_operands(count):
@@ -198,7 +279,7 @@ def print_empty_operands(count):
         else:
             print("OperandData{" + str(0) + ", OperandType::None}", end = LAST_OPERAND)
 
-def main():
+def print_opcode_data():
     for key, value in opcode_data.items():
         print(f"opcodeData[static_cast<size_t>(Opcode::{key})] = {{", end = '')
         print(str(len(value)) + ", { ", end = '')
@@ -214,6 +295,24 @@ def main():
 
         if operandCount < MAX_OPERANDS:
             print_empty_operands(MAX_OPERANDS - operandCount)
+
+def print_vm_table():
+    for key, value in opcode_data.items():
+        print(f"opcodeTable[static_cast<size_t>(Opcode::{key})] = &VM::{key};")
+
+def print_vm_func_declarations():
+    for key, value in opcode_data.items():
+        print(f"void {key}();")
+
+def print_vm_func_definitions():
+    for key, value in opcode_data.items():
+        print(f"void VM::{key}()\n{{\n\n}}\n")
+
+def main():
+    #print_opcode_data()
+    #print_vm_table()
+    #print_vm_func_declarations()
+    print_vm_func_definitions()
 
 if __name__ == "__main__":
     main()

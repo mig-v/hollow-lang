@@ -53,6 +53,6 @@ private:
 	MemoryArena* nodeArena;
 	MemoryArena* typeArena;
 	DiagnosticReporter* diagnosticReporter;
-	TypeInfo* functionCtx;
+	std::vector<TypeInfo*> functionCtxStack;
 	TypeConversions* typeConversions;
 };

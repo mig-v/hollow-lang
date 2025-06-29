@@ -94,6 +94,8 @@ public:
 	ASTExpr* assignee;
 	Token op;
 	ASTExpr* value;
+
+	int slotIndex;
 };
 
 class ASTLogical : public ASTExpr

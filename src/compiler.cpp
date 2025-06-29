@@ -9,6 +9,7 @@ Compiler::Compiler()
 	this->typeChecker = nullptr;
 	this->bytecodeEmitter = nullptr;
 	this->bytecodeDisassembler = nullptr;
+	this->vm = nullptr;
 }
 
 Compiler::~Compiler()
@@ -24,6 +25,7 @@ void Compiler::shutdown()
 	delete typeChecker;
 	delete bytecodeEmitter;
 	delete bytecodeDisassembler;
+	delete vm;
 	diagnosticReporter.displayDiagnostics(false);
 }
 
@@ -35,6 +37,7 @@ void Compiler::compile(const std::string& file)
 	bytecodeEmitter = new BytecodeEmitter();
 	bytecodeDisassembler = new BytecodeDisassembler();
 	typeChecker = new TypeChecker();
+	vm = new VM();
 
 	if (!lexer->lexFile(TEST_PATH"/parser_tests/temp.hollow"))
 		return;
@@ -44,6 +47,7 @@ void Compiler::compile(const std::string& file)
 		return;
 
 	semanticAnalysis->analyze(parser->getAst(), &typeArena, &diagnosticReporter);
+	int globalVarCount = semanticAnalysis->getGlobalVarCount();
 	if (diagnosticReporter.hasErrors())
 		return;
 	
@@ -56,4 +60,5 @@ void Compiler::compile(const std::string& file)
 	parser->printAST();
 	bytecodeDisassembler->setBytecode(bytecodeEmitter->getBytecode());
 	bytecodeDisassembler->disassemble();
+	vm->execute(bytecodeEmitter->getBytecode(), bytecodeEmitter->getFunctionTable(), globalVarCount);
 }

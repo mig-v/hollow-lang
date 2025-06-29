@@ -1,4 +1,5 @@
 #include "bytecode_emitter.h"
+
 #include <iostream>
 
 BytecodeEmitter::BytecodeEmitter()
@@ -11,6 +12,19 @@ void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 {
 	for (ASTNode* node : ast)
 		node->accept(*this);
+
+	// emit a HALT instruction after top level code. Everything below this point are functions, which should not be executed directly
+	// they must be executed via a CALL instruction
+	emit(Opcode::HALT);
+
+	// go back and generate bytecode for all deferred functions
+	for (ASTFuncDecl* func : deferredFunctions)
+		resolveDeferredFunction(func);
+
+	for (DeferredCall& call : deferredCalls)
+		resolveDeferredCall(call);
+
+	functionTable.dumpTable();
 }
 
 void BytecodeEmitter::emitDefaultValue(TypeKind type)
@@ -74,14 +88,38 @@ void BytecodeEmitter::insert16(uint16_t value, size_t offset)
 	bytecode[offset + 1] = ((value >> 8) & 0xFF);
 }
 
+void BytecodeEmitter::insert8(uint8_t value, size_t offset)
+{
+	bytecode[offset] = value;
+}
+
 void BytecodeEmitter::patchLabelJumps(std::vector<uint16_t>& patchSites, uint16_t address)
 {
 	// only have to call patchLabelJumps when we dont know what address we're going to be jumping to.
 	// E.G. when jumping over true branch to false branch, we dont know the address of the false branch
 	// until after we generate code for the true branch so we have to come back and patch in those jump addresses
-	std::cout << "size of patchSites for start: " << (uint32_t)patchSites.size() << std::endl;
 	for (size_t i = 0; i < patchSites.size(); i++)
 		insert16(address, static_cast<uint16_t>(patchSites[i]));
+}
+
+void BytecodeEmitter::resolveDeferredFunction(ASTFuncDecl* function)
+{
+	// this is guaranteed to be in the function table at this point, no need to check against nullptr
+	VMFunctionEntry* entry = functionTable.lookupFunctionByName(std::get<std::string>(function->funcIdentifier.value));
+	entry->startAddress = bytecode.size();
+
+	function->body->accept(*this);
+}
+
+void BytecodeEmitter::resolveDeferredCall(DeferredCall& deferredCall)
+{
+	// need to patch in the calls func index and arg count operands
+	// bytecode looks like [..., CALL, 0, 0, 0, ...]
+	// where the first two 0's are dummy values for the funcIndex, and the last 0 is a dummy value for the arg count
+	
+	VMFunctionEntry* function = functionTable.lookupFunctionByName(deferredCall.call->callee->typeInfo->name);
+	insert16(function->funcIndex, deferredCall.callAddress);
+	insert8(function->argCount, deferredCall.callAddress + 2);
 }
 
 Opcode BytecodeEmitter::getTypeSpecificAddOpcode(TypeKind type)
@@ -384,6 +422,55 @@ Opcode BytecodeEmitter::getTypeSpecificLteOpcode(TypeKind type)
 	}
 }
 
+Opcode BytecodeEmitter::getTypeSpecificLoadOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::LOAD_I8;
+		case TypeKind::i16:  return Opcode::LOAD_I16;
+		case TypeKind::i32:  return Opcode::LOAD_I32;
+		case TypeKind::i64:  return Opcode::LOAD_I64;
+		case TypeKind::u8:   return Opcode::LOAD_U8;
+		case TypeKind::u16:  return Opcode::LOAD_U16;
+		case TypeKind::u32:  return Opcode::LOAD_U32;
+		case TypeKind::u64:  return Opcode::LOAD_U64;
+		case TypeKind::f32:  return Opcode::LOAD_F32;
+		case TypeKind::f64:  return Opcode::LOAD_F64;
+		case TypeKind::Char: return Opcode::LOAD_CHAR;
+		case TypeKind::Bool: return Opcode::LOAD_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificIncOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::INC_I8;
+		case TypeKind::i16:  return Opcode::INC_I16;
+		case TypeKind::i32:  return Opcode::INC_I32;
+		case TypeKind::i64:  return Opcode::INC_I64;
+		case TypeKind::u8:   return Opcode::INC_U8;
+		case TypeKind::u16:  return Opcode::INC_U16;
+		case TypeKind::u32:  return Opcode::INC_U32;
+		case TypeKind::u64:  return Opcode::INC_U64;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificDecOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::DEC_I8;
+		case TypeKind::i16:  return Opcode::DEC_I16;
+		case TypeKind::i32:  return Opcode::DEC_I32;
+		case TypeKind::i64:  return Opcode::DEC_I64;
+		case TypeKind::u8:   return Opcode::DEC_U8;
+		case TypeKind::u16:  return Opcode::DEC_U16;
+		case TypeKind::u32:  return Opcode::DEC_U32;
+		case TypeKind::u64:  return Opcode::DEC_U64;
+	}
+}
+
 void BytecodeEmitter::emit(Opcode opcode)
 {
 	uint16_t val = static_cast<uint16_t>(opcode);
@@ -520,52 +607,18 @@ void BytecodeEmitter::visitVarDecl(ASTVarDecl& node)
 
 void BytecodeEmitter::visitFuncDecl(ASTFuncDecl& node)
 {
-	
+	// need to add to deferredFunctions vector, don't emit any code here
+	deferredFunctions.push_back(&node);
+
+	// add function meta data to FunctionTable, startAddress is defaulted to 0 and will later get patched in when iterating over
+	// the deferredFunctions vector
+	functionTable.addFunction(std::get<std::string>(node.funcIdentifier.value), static_cast<uint8_t>(node.params->params.size()), 0);
 }
 
 void BytecodeEmitter::visitIdentifier(ASTIdentifier& node)
 {
 	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
-
-	switch (type)
-	{
-		case TypeKind::i8:
-			emit(Opcode::LOAD_I8);
-			break;
-		case TypeKind::i16:
-			emit(Opcode::LOAD_I16);
-			break;
-		case TypeKind::i32:
-			emit(Opcode::LOAD_I32);
-			break;
-		case TypeKind::i64:
-			emit(Opcode::LOAD_I64);
-			break;
-		case TypeKind::u8:
-			emit(Opcode::LOAD_U8);
-			break;
-		case TypeKind::u16:
-			emit(Opcode::LOAD_U16);
-			break;
-		case TypeKind::u32:
-			emit(Opcode::LOAD_U32);
-			break;
-		case TypeKind::u64:
-			emit(Opcode::LOAD_U64);
-			break;
-		case TypeKind::f32:
-			emit(Opcode::LOAD_F32);
-			break;
-		case TypeKind::f64:
-			emit(Opcode::LOAD_F64);
-			break;
-		case TypeKind::Char:
-			emit(Opcode::LOAD_CHAR);
-			break;
-		case TypeKind::Bool:
-			emit(Opcode::LOAD_BOOL);
-			break;
-	}
+	emit(getTypeSpecificLoadOpcode(type));
 
 	// push the slot index to store the variable in
 	emit16(static_cast<uint16_t>(node.slotIndex));
@@ -578,12 +631,71 @@ void BytecodeEmitter::visitExprStmt(ASTExprStmt& node)
 
 void BytecodeEmitter::visitAssign(ASTAssign& node)
 {
+	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
+	
+	// simple assigns:
+	// PUSH value
+	// STORE slot
+	//
+	// compound assignments:
+	// LOAD slot
+	// PUSH value
+	// ADD/SUB/MUL
+	// STORE slot
 
+	// for compound assignment operators, we need to load the variable before pushing the value we're assigning
+	if (node.op.type != TokenType::Assign)
+	{
+		emit(getTypeSpecificLoadOpcode(type));
+		emit16(static_cast<uint16_t>(node.slotIndex));
+	}
+
+	// push the value we're assigning onto the stack
+	node.value->accept(*this);
+
+	// we dont need to switch on TokenType::Assign, since the logic is the same for every assign node at this point -> ADD/SUB/..., STORE_*, SLOT
+	// but normal assign tokens dont have to emit an add/sub/... instruction, just a store, then the slot
+	switch (node.op.type)
+	{
+		case TokenType::PlusEquals:
+			emit(getTypeSpecificAddOpcode(type));
+			break;
+		case TokenType::MinusEquals:
+			emit(getTypeSpecificSubOpcode(type));
+			break;
+		case TokenType::TimesEquals:
+			emit(getTypeSpecificMulOpcode(type));
+			break;
+		case TokenType::DividedEquals:
+			emit(getTypeSpecificDivOpcode(type));
+			break;
+		case TokenType::BitwiseAndEquals:
+			emit(getTypeSpecificAndOpcode(type));
+			break;
+		case TokenType::BitwiseOrEquals:
+			emit(getTypeSpecificOrOpcode(type));
+			break;
+		case TokenType::BitwiseXorEquals:
+			emit(getTypeSpecificXorOpcode(type));
+			break;
+		case TokenType::BitwiseLeftShiftEquals:
+			emit(getTypeSpecificShlOpcode(type));
+			break;
+		case TokenType::BitwiseRightShiftEquals:
+			emit(getTypeSpecificShrOpcode(type));
+			break;
+	}
+
+	emit(getTypeSpecificStoreOpcode(type));
+	emit16(static_cast<uint16_t>(node.slotIndex));
 }
 
 void BytecodeEmitter::visitReturn(ASTReturn& node)
 {
-
+	if (node.returnVal)
+		node.returnVal->accept(*this);
+	
+	emit(Opcode::RET);
 }
 
 void BytecodeEmitter::visitBlock(ASTBlock& node)
@@ -770,23 +882,26 @@ void BytecodeEmitter::visitBinaryExpr(ASTBinaryExpr& node)
 		case TokenType::BitwiseRightShift:
 			emit(getTypeSpecificShrOpcode(type));
 			break;
+
+		// For comparison operations, the binary expr node is ALWAYS set to Bool type, so we need to get the type
+		// from one of the sub expressions. They should match because of the type checking phase, so we can take either one
 		case TokenType::NotEq:
-			emit(getTypeSpecificNeqOpcode(type));
+			emit(getTypeSpecificNeqOpcode(node.lhs->typeInfo->type));
 			break;
 		case TokenType::Equality:
-			emit(getTypeSpecificEqOpcode(type));
+			emit(getTypeSpecificEqOpcode(node.lhs->typeInfo->type));
 			break;
 		case TokenType::GreaterThan:
-			emit(getTypeSpecificGtOpcode(type));
+			emit(getTypeSpecificGtOpcode(node.lhs->typeInfo->type));
 			break;
 		case TokenType::GreaterThanEq:
-			emit(getTypeSpecificGteOpcode(type));
+			emit(getTypeSpecificGteOpcode(node.lhs->typeInfo->type));
 			break;
 		case TokenType::LessThan:
-			emit(getTypeSpecificLtOpcode(type));
+			emit(getTypeSpecificLtOpcode(node.lhs->typeInfo->type));
 			break;
 		case TokenType::LessThanEq:
-			emit(getTypeSpecificLteOpcode(type));
+			emit(getTypeSpecificLteOpcode(node.lhs->typeInfo->type));
 			break;
 	}
 }
@@ -811,13 +926,13 @@ void BytecodeEmitter::visitUnaryExpr(ASTUnaryExpr& node)
 	switch (node.op.type)
 	{
 		case TokenType::Increment:
-			emit(Opcode::INC);
+			emit(getTypeSpecificIncOpcode(type));
 			emit(Opcode::DUP);
 			emit(getTypeSpecificStoreOpcode(type));
 			emit16(static_cast<uint16_t>(node.slotIndex));
 			break;
 		case TokenType::Decrement:
-			emit(Opcode::DEC);
+			emit(getTypeSpecificDecOpcode(type));
 			emit(Opcode::DUP);
 			emit(getTypeSpecificStoreOpcode(type));
 			emit16(static_cast<uint16_t>(node.slotIndex));
@@ -836,7 +951,30 @@ void BytecodeEmitter::visitUnaryExpr(ASTUnaryExpr& node)
 
 void BytecodeEmitter::visitCall(ASTCall& node)
 {
+	// i dont need to do this yet. Right now, callee nodes are only ever ASTIdentifier nodes, when i support more complex things like
+	// foo()(), or functionPointers, i will need to visit the callee and do more work, but right now this should work
+	//node.callee->accept(*this);
 
+	// if the callee resolves to a function already in the function table, great, emit code for the call
+	if (VMFunctionEntry* function = functionTable.lookupFunctionByName(node.callee->typeInfo->name))
+	{
+		node.args->accept(*this);
+		emit(Opcode::CALL);
+		emit16(function->funcIndex);
+		emit8(function->argCount);
+	}
+	else
+	{
+		DeferredCall deferredCall;
+		deferredCall.call = &node;
+		node.args->accept(*this);
+		emit(Opcode::CALL);
+
+		// callAddress will point to the beginning of the CALL instruction's operands, for now we emit dummy values for the func index and arg count
+		deferredCall.callAddress = bytecode.size();
+		emit16(0);
+		emit8(0);
+	}
 }
 
 void BytecodeEmitter::visitGroupExpr(ASTGroupExpr& node)
@@ -858,12 +996,12 @@ void BytecodeEmitter::visitPostfix(ASTPostfix& node)
 	if (node.op.type == TokenType::Increment)
 	{
 		emit(Opcode::DUP);
-		emit(Opcode::INC);
+		emit(getTypeSpecificIncOpcode(type));
 	}
 	else if (node.op.type == TokenType::Decrement)
 	{
 		emit(Opcode::DUP);
-		emit(Opcode::DEC);
+		emit(getTypeSpecificDecOpcode(type));
 	}
 
 	// have to output store instruction AND the variables slot, forgetting to emit the slot was the cause of a nasty bug
@@ -873,22 +1011,23 @@ void BytecodeEmitter::visitPostfix(ASTPostfix& node)
 
 void BytecodeEmitter::visitParameter(ASTParameter& node)
 {
-
+	// no codegen
 }
 
 void BytecodeEmitter::visitArgument(ASTArgument& node)
 {
-
+	node.value->accept(*this);
 }
 
 void BytecodeEmitter::visitParamList(ASTParamList& node)
 {
-
+	// no codegen
 }
 
 void BytecodeEmitter::visitArgList(ASTArgList& node)
 {
-
+	for (ASTArgument* arg : node.args)
+		arg->accept(*this);
 }
 
 void BytecodeEmitter::visitCast(ASTCast& node)

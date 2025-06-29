@@ -51,6 +51,7 @@ enum class Opcode : uint16_t
 	POP = 0x35,
 	DUP = 0x36,
 	SWAP = 0x37,
+	HALT = 0x38,
 
 	ADD_I8 = 0x40,
 	ADD_I16 = 0x41,
@@ -190,8 +191,15 @@ enum class Opcode : uint16_t
 	LOGICAL_OR = 0x111,
 	LOGICAL_NOT = 0x112,
 
-	INC = 0x120,
-	DEC = 0x121,
+	INC_I8 = 0x120,
+	INC_I16 = 0x121,
+	INC_I32 = 0x122,
+	INC_I64 = 0x123,
+	INC_U8 = 0x124,
+	INC_U16 = 0x125,
+	INC_U32 = 0x126,
+	INC_U64 = 0x127,
+
 
 	NOT_I8 = 0x130,
 	NOT_I16 = 0x131,
@@ -246,6 +254,15 @@ enum class Opcode : uint16_t
 	SHR_U16 = 0x185,
 	SHR_U32 = 0x186,
 	SHR_U64 = 0x187,
+
+	DEC_I8 = 0x190,
+	DEC_I16 = 0x191,
+	DEC_I32 = 0x192,
+	DEC_I64 = 0x193,
+	DEC_U8 = 0x194,
+	DEC_U16 = 0x195,
+	DEC_U32 = 0x196,
+	DEC_U64 = 0x197,
 
 	NUM_OPCODES
 };

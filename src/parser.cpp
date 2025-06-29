@@ -534,7 +534,10 @@ ASTExpr* Parser::parseFuncArgs(ASTExpr* callee)
 	{
 		// consume the ")" token and return an ASTCall node with no args
 		tokenStream.consume();
-		return arena->alloc<ASTCall>(callee, args);
+		ASTCall* call = arena->alloc<ASTCall>(callee, args);
+		call->line = start.lineNum;
+		call->col = start.column;
+		return call;
 	}
 
 	// otherwise, parse all arguments
@@ -554,7 +557,11 @@ ASTExpr* Parser::parseFuncArgs(ASTExpr* callee)
 	}
 
 	assertCurrent(TokenType::CloseParen, "Expect \")\" after function arguments");
-	return arena->alloc<ASTCall>(callee, args);
+	ASTCall* call = arena->alloc<ASTCall>(callee, args);
+	call->line = start.lineNum;
+	call->col = start.column;
+	return call;
+	//return arena->alloc<ASTCall>(callee, args);
 }
 
 ASTParamList* Parser::parseFuncParams()

@@ -5,12 +5,17 @@
 Environment::Environment()
 {
 	scopeDepth = 0;
-	scopes.emplace_back();	// emplace the 'global' scope, which is always the scope at index 0 in the scopes vector
+	scopes.emplace_back(SymbolTable{0});	// emplace the 'global' scope, which is always the scope at index 0 in the scopes vector
 }
 
-void Environment::pushScope()
+void Environment::pushScope(ScopeKind kind)
 {
-	scopes.emplace_back();
+	// slot offset has to be the parent scopes slotIndex + ITS parent scope slot offset
+	// but only if the scope is NORMAL, if it's a FUNCTION, then we need to reset slot counting from 0,
+	// so we pass in an offset of 0. This is because when a function is called, a stack frame is pushed
+	// resetting slot indices back to 0. This will not interfere with prev scopes / global scope
+	int parentScopeSlotOffset = kind == ScopeKind::Normal ? scopes.back().getSlotOffset() : 0;
+	scopes.emplace_back(SymbolTable{parentScopeSlotOffset});
 	scopeDepth++;
 }
 

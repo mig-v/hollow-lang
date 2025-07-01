@@ -33,17 +33,7 @@ void ASTVarDecl::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitVarDecl(*this, depth);
 }
 
-void ASTVarDecl::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitVarDecl(*this);
-}
-
-void ASTVarDecl::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitVarDecl(*this);
-}
-
-void ASTVarDecl::accept(TypeChecker& visitor)
+void ASTVarDecl::accept(ASTVisitor& visitor)
 {
 	visitor.visitVarDecl(*this);
 }
@@ -55,6 +45,7 @@ ASTFuncDecl::ASTFuncDecl(Token funcIdentifier, Token returnType, ASTParamList* p
 	this->params = params;
 	this->body = body;
 	this->typeInfo = nullptr;
+	this->scope = nullptr;
 }
 
 bool ASTFuncDecl::operator==(const ASTNode& other) const
@@ -74,17 +65,7 @@ void ASTFuncDecl::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitFuncDecl(*this, depth);
 }
 
-void ASTFuncDecl::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitFuncDecl(*this);
-}
-
-void ASTFuncDecl::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitFuncDecl(*this);
-}
-
-void ASTFuncDecl::accept(TypeChecker& visitor)
+void ASTFuncDecl::accept(ASTVisitor& visitor)
 {
 	visitor.visitFuncDecl(*this);
 }
@@ -107,17 +88,7 @@ void ASTExprStmt::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitExprStmt(*this, depth);
 }
 
-void ASTExprStmt::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitExprStmt(*this);
-}
-
-void ASTExprStmt::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitExprStmt(*this);
-}
-
-void ASTExprStmt::accept(TypeChecker& visitor)
+void ASTExprStmt::accept(ASTVisitor& visitor)
 {
 	visitor.visitExprStmt(*this);
 }
@@ -140,17 +111,7 @@ void ASTReturn::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitReturn(*this, depth);
 }
 
-void ASTReturn::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitReturn(*this);
-}
-
-void ASTReturn::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitReturn(*this);
-}
-
-void ASTReturn::accept(TypeChecker& visitor)
+void ASTReturn::accept(ASTVisitor& visitor)
 {
 	visitor.visitReturn(*this);
 }
@@ -160,6 +121,7 @@ ASTBlock::ASTBlock()
 	// by default scopes will create blocks, but control flow nodes like if, for, while, etc. Will manage the creation of scopes
 	// and set this createScope bool to false. This only happens / matters during the semantic analysis phase
 	this->createScope = true;
+	this->scope = nullptr;
 }
 
 bool ASTBlock::operator==(const ASTNode& other) const
@@ -186,17 +148,7 @@ void ASTBlock::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitBlock(*this, depth);
 }
 
-void ASTBlock::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitBlock(*this);
-}
-
-void ASTBlock::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitBlock(*this);
-}
-
-void ASTBlock::accept(TypeChecker& visitor)
+void ASTBlock::accept(ASTVisitor& visitor)
 {
 	visitor.visitBlock(*this);
 }
@@ -207,6 +159,7 @@ ASTForLoop::ASTForLoop(ASTStmt* initializer, ASTExpr* condition, ASTExpr* increm
 	this->condition = condition;
 	this->increment = increment;
 	this->body = body;
+	this->scope = nullptr;
 }
 
 bool ASTForLoop::operator==(const ASTNode& other) const
@@ -227,17 +180,7 @@ void ASTForLoop::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitForLoop(*this, depth);
 }
 
-void ASTForLoop::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitForLoop(*this);
-}
-
-void ASTForLoop::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitForLoop(*this);
-}
-
-void ASTForLoop::accept(TypeChecker& visitor)
+void ASTForLoop::accept(ASTVisitor& visitor)
 {
 	visitor.visitForLoop(*this);
 }
@@ -266,17 +209,7 @@ void ASTIfStatement::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitIfStatement(*this, depth);
 }
 
-void ASTIfStatement::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitIfStatement(*this);
-}
-
-void ASTIfStatement::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitIfStatement(*this);
-}
-
-void ASTIfStatement::accept(TypeChecker& visitor)
+void ASTIfStatement::accept(ASTVisitor& visitor)
 {
 	visitor.visitIfStatement(*this);
 }
@@ -303,17 +236,7 @@ void ASTWhileLoop::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitWhileLoop(*this, depth);
 }
 
-void ASTWhileLoop::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitWhileLoop(*this);
-}
-
-void ASTWhileLoop::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitWhileLoop(*this);
-}
-
-void ASTWhileLoop::accept(TypeChecker& visitor)
+void ASTWhileLoop::accept(ASTVisitor& visitor)
 {
 	visitor.visitWhileLoop(*this);
 }

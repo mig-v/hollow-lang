@@ -21,10 +21,11 @@ struct Symbol
 class SymbolTable
 {
 public:
-	SymbolTable(int parentScopeSlotOffset);
+	SymbolTable();
 	~SymbolTable() = default;
 
 	inline int getSlotOffset() const { return nextSlot + parentScopeSlotOffset; }
+	void setSlotOffset(int offset);
 
 	int declareVar(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth);
 	void declareFunc(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth);

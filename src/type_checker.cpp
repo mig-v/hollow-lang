@@ -420,11 +420,9 @@ void TypeChecker::visitCall(ASTCall& node)
 		return;
 	}
 
-	//functionCtx = node.callee->typeInfo;
 	functionCtxStack.push_back(node.callee->typeInfo);
 	node.args->accept(*this);
 	functionCtxStack.pop_back();
-	//functionCtx = nullptr;
 }
 
 void TypeChecker::visitGroupExpr(ASTGroupExpr& node)
@@ -487,15 +485,15 @@ void TypeChecker::visitArgList(ASTArgList& node)
 	if (functionCtxStack.size() == 0)
 		return;
 	
-	if (node.args.size() != functionCtxStack.back()->paramTypes.size())
-	{
-		std::string message = "mismatched function argument count, expected ";
-		message += std::to_string(functionCtxStack.back()->paramTypes.size());
-		message += " but got ";
-		message += std::to_string(node.args.size());
-		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, ErrorPhase::TypeChecker, node.line, node.col);
-		return;
-	}
+	//if (node.args.size() != functionCtxStack.back()->paramTypes.size())
+	//{
+	//	std::string message = "mismatched function argument count, expected ";
+	//	message += std::to_string(functionCtxStack.back()->paramTypes.size());
+	//	message += " but got ";
+	//	message += std::to_string(node.args.size());
+	//	diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, ErrorPhase::TypeChecker, node.line, node.col);
+	//	return;
+	//}
 
 	for (size_t i = 0; i < node.args.size(); i++)
 	{

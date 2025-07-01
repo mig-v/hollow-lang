@@ -7,7 +7,6 @@
 #include "parser_tests.h"
 #include "compiler.h"
 
-
 int main()
 {
 	Compiler compiler;

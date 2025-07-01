@@ -1,10 +1,7 @@
 #pragma once
 
 #include "opcodes.h"
-
-#include "ast_node.h"
-#include "ast_expr.h"
-#include "ast_stmt.h"
+#include "ast_visitor.h"
 #include "vm_function_table.h"
 
 struct JumpLabel
@@ -26,7 +23,7 @@ struct DeferredCall
 	size_t callAddress;
 };
 
-class BytecodeEmitter
+class BytecodeEmitter : public ASTVisitor
 {
 public:
 	BytecodeEmitter();
@@ -34,31 +31,29 @@ public:
 	std::vector<uint8_t>* getBytecode() { return &bytecode; }
 	VMFunctionTable* getFunctionTable() { return &functionTable; }
 
-	void visitIntLiteral(ASTIntLiteral& node);
-	void visitDoubleLiteral(ASTDoubleLiteral& node);
-	void visitCharLiteral(ASTCharLiteral& node);
-	void visitBoolLiteral(ASTBoolLiteral& node);
-	void visitVarDecl(ASTVarDecl& node);
-	void visitFuncDecl(ASTFuncDecl& node);
-	void visitIdentifier(ASTIdentifier& node);
-	void visitExprStmt(ASTExprStmt& node);
-	void visitAssign(ASTAssign& node);
-	void visitReturn(ASTReturn& node);
-	void visitBlock(ASTBlock& node);
-	void visitForLoop(ASTForLoop& node);
-	void visitWhileLoop(ASTWhileLoop& node);
-	void visitIfStatement(ASTIfStatement& node);
-	void visitLogical(ASTLogical& node);
-	void visitBinaryExpr(ASTBinaryExpr& node);
-	void visitUnaryExpr(ASTUnaryExpr& node);
-	void visitCall(ASTCall& node);
-	void visitGroupExpr(ASTGroupExpr& node);
-	void visitPostfix(ASTPostfix& node);
-	void visitParameter(ASTParameter& node);
-	void visitArgument(ASTArgument& node);
-	void visitParamList(ASTParamList& node);
-	void visitArgList(ASTArgList& node);
-	void visitCast(ASTCast& node);
+	void visitIntLiteral(ASTIntLiteral& node) override;
+	void visitDoubleLiteral(ASTDoubleLiteral& node) override;
+	void visitCharLiteral(ASTCharLiteral& node) override;
+	void visitBoolLiteral(ASTBoolLiteral& node) override;
+	void visitVarDecl(ASTVarDecl& node) override;
+	void visitFuncDecl(ASTFuncDecl& node) override;
+	void visitIdentifier(ASTIdentifier& node) override;
+	void visitExprStmt(ASTExprStmt& node) override;
+	void visitAssign(ASTAssign& node) override;
+	void visitReturn(ASTReturn& node) override;
+	void visitBlock(ASTBlock& node) override;
+	void visitForLoop(ASTForLoop& node) override;
+	void visitWhileLoop(ASTWhileLoop& node) override;
+	void visitIfStatement(ASTIfStatement& node) override;
+	void visitLogical(ASTLogical& node) override;
+	void visitBinaryExpr(ASTBinaryExpr& node) override;
+	void visitUnaryExpr(ASTUnaryExpr& node) override;
+	void visitCall(ASTCall& node) override;
+	void visitGroupExpr(ASTGroupExpr& node) override;
+	void visitPostfix(ASTPostfix& node) override;
+	void visitArgument(ASTArgument& node) override;
+	void visitArgList(ASTArgList& node) override;
+	void visitCast(ASTCast& node) override;
 
 private:
 	void emit(Opcode opcode);
@@ -73,6 +68,7 @@ private:
 	void patchLabelJumps(std::vector<uint16_t>& patchSites, uint16_t address);
 	void resolveDeferredFunction(ASTFuncDecl* function);
 	void resolveDeferredCall(DeferredCall& deferredCall);
+	void emitCallToMain();
 
 	Opcode getTypeSpecificAddOpcode(TypeKind type);
 	Opcode getTypeSpecificSubOpcode(TypeKind type);

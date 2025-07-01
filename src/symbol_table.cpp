@@ -3,11 +3,15 @@
 
 #include <iostream>
 
-SymbolTable::SymbolTable(int parentScopeSlotOffset)
+SymbolTable::SymbolTable()
 {
-	std::cout << "making symbol table with parent offset = " << parentScopeSlotOffset << std::endl;
 	this->nextSlot = 0;
 	this->parentScopeSlotOffset = parentScopeSlotOffset;
+}
+
+void SymbolTable::setSlotOffset(int offset)
+{
+	this->parentScopeSlotOffset = offset;
 }
 
 int SymbolTable::declareVar(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth)
@@ -40,6 +44,21 @@ void SymbolTable::dumpSymbolTable()
 	for (auto& symbol : symbols)
 	{
 		Symbol& sym = symbol.second;
-		std::cout << symbol.first << " : " << DebugUtils::typeKindToString(sym.typeInfo->type) << " [scope = " << sym.scope << ", slot index = " << sym.slotIndex << "]\n";
+
+		if (sym.typeInfo->type == TypeKind::Function)
+		{
+			std::cout << symbol.first << " : " << DebugUtils::typeKindToString(sym.typeInfo->type) << " [scope = " << sym.scope << ", parameters -> [";
+
+			for (size_t i = 0; i < sym.typeInfo->paramTypes.size(); i++)
+			{
+				std::cout << sym.typeInfo->paramTypes[i]->name << " : " << DebugUtils::typeKindToString(sym.typeInfo->paramTypes[i]->type);
+				if (i + 1 < sym.typeInfo->paramTypes.size())
+					std::cout << ", ";
+			}
+
+			std::cout << "]]\n";
+		}
+		else
+			std::cout << symbol.first << " : " << DebugUtils::typeKindToString(sym.typeInfo->type) << " [scope = " << sym.scope << ", slot index = " << sym.slotIndex << "]\n";
 	}
 }

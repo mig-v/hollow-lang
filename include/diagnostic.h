@@ -15,6 +15,7 @@ enum class DiagnosticLevel
 enum class ErrorPhase
 {
 	None,
+	SymbolResolution,
 	Parser,
 	Semantic,
 	TypeChecker

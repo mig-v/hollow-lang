@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast_node.h"
+#include "symbol_table.h"
 
 class ASTExpr;
 
@@ -17,9 +18,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* expression;
 };
@@ -31,9 +30,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	TokenType varType;
 	Token varIdentifier;
@@ -52,11 +49,10 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	std::vector<ASTStmt*> statements;
+	SymbolTable* scope;
 
 	// used during semantic analysis, blocks on their own should create scopes, but blocks for if, while, for, and funcDecl nodes
 	// shouldnt. The control statements are responsible for creating the scope
@@ -70,15 +66,14 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	Token funcIdentifier;
 	Token returnType;
 	ASTBlock* body;
 	ASTParamList* params;
 	TypeInfo* typeInfo;
+	SymbolTable* scope;
 };
 
 class ASTReturn : public ASTStmt
@@ -88,9 +83,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* returnVal;
 };
@@ -102,14 +95,13 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTStmt* initializer;
 	ASTExpr* condition;
 	ASTExpr* increment;
 	ASTBlock* body;
+	SymbolTable* scope;
 };
 
 class ASTWhileLoop : public ASTStmt
@@ -119,9 +111,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* condition;
 	ASTBlock* body;
@@ -134,9 +124,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* condition;
 	ASTStmt* trueBranch;

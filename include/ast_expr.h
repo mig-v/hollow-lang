@@ -15,9 +15,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	uint64_t value;
 };
@@ -29,9 +27,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	double value;
 };
@@ -43,9 +39,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	char value;
 };
@@ -57,9 +51,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	bool value;
 };
@@ -71,9 +63,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	Token identifier;
 	int scope;
@@ -87,9 +77,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* assignee;
 	Token op;
@@ -105,9 +93,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* lhs;
 	Token logicalOperator;
@@ -121,9 +107,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* lhs;
 	Token op;
@@ -137,9 +121,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	Token op;
 	ASTExpr* expr;
@@ -153,9 +135,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* callee;
 	ASTArgList* args;
@@ -168,9 +148,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* expr;
 };
@@ -182,9 +160,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* expr;
 	Token op;
@@ -201,9 +177,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* value;
 };
@@ -214,9 +188,7 @@ public:
 	ASTCast(ASTExpr* expr);
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	ASTExpr* expr;
 };

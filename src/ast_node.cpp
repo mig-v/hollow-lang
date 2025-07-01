@@ -34,17 +34,7 @@ void ASTParameter::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitParameter(*this, depth);
 }
 
-void ASTParameter::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitParameter(*this);
-}
-
-void ASTParameter::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitParameter(*this);
-}
-
-void ASTParameter::accept(TypeChecker& visitor)
+void ASTParameter::accept(ASTVisitor& visitor)
 {
 	visitor.visitParameter(*this);
 }
@@ -73,17 +63,7 @@ void ASTParamList::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitParamList(*this, depth);
 }
 
-void ASTParamList::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitParamList(*this);
-}
-
-void ASTParamList::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitParamList(*this);
-}
-
-void ASTParamList::accept(TypeChecker& visitor)
+void ASTParamList::accept(ASTVisitor& visitor)
 {
 	visitor.visitParamList(*this);
 }
@@ -112,17 +92,7 @@ void ASTArgList::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitArgList(*this, depth);
 }
 
-void ASTArgList::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitArgList(*this);
-}
-
-void ASTArgList::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitArgList(*this);
-}
-
-void ASTArgList::accept(TypeChecker& visitor)
+void ASTArgList::accept(ASTVisitor& visitor)
 {
 	visitor.visitArgList(*this);
 }

@@ -821,7 +821,7 @@ void VM::SUB_I32()
 	int32_t rhs = static_cast<int32_t>(POP());
 	int32_t lhs = static_cast<int32_t>(POP());
 	int32_t result = lhs - rhs;
-
+	std::cout << "subtracting " << lhs << " - " << rhs << " = " << result << std::endl;
 	int64_t signExtended = static_cast<int64_t>(result);
 	PUSH(static_cast<uint64_t>(signExtended));
 }
@@ -1768,7 +1768,6 @@ void VM::INC_U64()
 
 	PUSH(val);
 }
-
 
 void VM::DEC_I8()
 {

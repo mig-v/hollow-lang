@@ -5,6 +5,7 @@ Compiler::Compiler()
 {
 	this->lexer = nullptr;
 	this->parser = nullptr;
+	this->symbolResolution = nullptr;
 	this->semanticAnalysis = nullptr;
 	this->typeChecker = nullptr;
 	this->bytecodeEmitter = nullptr;
@@ -21,6 +22,7 @@ void Compiler::shutdown()
 {
 	delete lexer;
 	delete parser;
+	delete symbolResolution;
 	delete semanticAnalysis;
 	delete typeChecker;
 	delete bytecodeEmitter;
@@ -33,6 +35,7 @@ void Compiler::compile(const std::string& file)
 {
 	lexer = new Lexer();
 	parser = new Parser();
+	symbolResolution = new SymbolResolution();
 	semanticAnalysis = new SemanticAnalysis();
 	bytecodeEmitter = new BytecodeEmitter();
 	bytecodeDisassembler = new BytecodeDisassembler();
@@ -46,18 +49,22 @@ void Compiler::compile(const std::string& file)
 	if (diagnosticReporter.hasErrors())
 		return;
 
-	semanticAnalysis->analyze(parser->getAst(), &typeArena, &diagnosticReporter);
+	symbolResolution->resolve(parser->getAst(), &diagnosticReporter);
+	if (diagnosticReporter.hasErrors())
+		return;
+
+	semanticAnalysis->analyze(parser->getAst(), &typeArena, &diagnosticReporter, symbolResolution->getEnv());
 	int globalVarCount = semanticAnalysis->getGlobalVarCount();
 	if (diagnosticReporter.hasErrors())
 		return;
-	
-	std::cout << "calling typeCheck()\n";
+	//
+	//std::cout << "calling typeCheck()\n";
 	typeChecker->typeCheck(parser->getAst(), &nodeArena, &typeArena, &diagnosticReporter);
 	if (diagnosticReporter.hasErrors())
 		return;
 
 	bytecodeEmitter->generateBytecode(parser->getAst());
-	parser->printAST();
+	//parser->printAST();
 	bytecodeDisassembler->setBytecode(bytecodeEmitter->getBytecode());
 	bytecodeDisassembler->disassemble();
 	vm->execute(bytecodeEmitter->getBytecode(), bytecodeEmitter->getFunctionTable(), globalVarCount);

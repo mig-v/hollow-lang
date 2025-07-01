@@ -20,6 +20,8 @@ VMFunctionEntry* VMFunctionTable::lookupFunctionByName(const std::string& name)
 		if (function.name == name)
 			return &function;
 	}
+
+	return nullptr;
 }
 
 VMFunctionEntry& VMFunctionTable::getFunctionByIndex(uint16_t index)

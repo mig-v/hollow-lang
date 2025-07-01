@@ -9,26 +9,54 @@ SemanticAnalysis::SemanticAnalysis()
 {
 	this->diagnosticReporter = nullptr;
 	this->typeArena = nullptr;
+	this->env = nullptr;
 }
 
 void SemanticAnalysis::printInfo()
 {
-	env.dumpEnvironment();
+	env->dumpEnvironment();
 }
 
 int SemanticAnalysis::getGlobalVarCount()
 {
-	SymbolTable& globalScope = env.getGlobalScope();
-	return globalScope.getSlotOffset();
+	SymbolTable* globalScope = env->getGlobalScope();
+	return globalScope->getSlotOffset();
 }
 
-void SemanticAnalysis::analyze(std::vector<ASTNode*>& ast, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter)
+void SemanticAnalysis::checkForMainFunction()
+{
+	SymbolTable* globalScope = env->getGlobalScope();
+
+	if (!globalScope->isDefined("main"))
+	{
+		diagnosticReporter->reportDiagnostic("main function not found", DiagnosticLevel::Error, DiagnosticType::UndefinedIdentifier, ErrorPhase::Semantic, 0, 0);
+		return;
+	}
+	
+	Symbol* main = globalScope->getSymbol("main");
+	if (main->typeInfo->type != TypeKind::Function)
+	{
+		diagnosticReporter->reportDiagnostic("identifier \"main\" found, but it is not a function", DiagnosticLevel::Error, DiagnosticType::UndefinedIdentifier, ErrorPhase::Semantic, 0, 0);
+		return;
+	}
+
+	if (main->typeInfo->returnType->type != TypeKind::i32)
+	{
+		diagnosticReporter->reportDiagnostic("main function must return i32", DiagnosticLevel::Error, DiagnosticType::UndefinedIdentifier, ErrorPhase::Semantic, 0, 0);
+		return;
+	}
+}
+
+void SemanticAnalysis::analyze(std::vector<ASTNode*>& ast, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter, Environment* env)
 {
 	this->diagnosticReporter = diagnosticReporter;
 	this->typeArena = typeArena;
+	this->env = env;
 
 	for (ASTNode* node : ast)
 		node->accept(*this);
+
+	checkForMainFunction();
 }
 
 void SemanticAnalysis::visitIntLiteral(ASTIntLiteral& node)
@@ -72,89 +100,18 @@ void SemanticAnalysis::visitBoolLiteral(ASTBoolLiteral& node)
 
 void SemanticAnalysis::visitVarDecl(ASTVarDecl& node)
 {
-	SymbolTable& table = env.getCurrentScope();
-	std::string& identifier = std::get<std::string>(node.varIdentifier.value);
-	node.typeInfo = typeArena->alloc<TypeInfo>();
-
-	// error, defining a variable that is already defined
-	if (table.isDefined(identifier))
-	{
-		std::string message = "cannot define variables with the same name: \"" + identifier + "\"";
-		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::DuplicateIdentifier, ErrorPhase::Semantic, node.line, node.col);
-		node.typeInfo->type = TypeKind::Unknown;
-		return;
-	}
-
-	node.typeInfo->name = identifier;
-	node.typeInfo->type = SemanticUtils::getTypeFromToken(node.varType);
-	
-	// if the node has an initialization, make sure the type of this variable is compatible with the type of the initialization expression
+	// we don't need to lookup the symbol here, since the symbol resolution pass guarantees that this variable is unique
+	// if the node has an initialization, visit it and collect type data on it, type data for this var decl node was collected during symbol resolution
 	if (node.initialization)
-	{
-		// now we know what type is declared for the variable, and what type was inferred for the initialization. Now we need to check
-		// if they are compatible
 		node.initialization->accept(*this);
-
-		//Diagnostic ctx;
-		//if (!SemanticUtils::isAssignable(node.typeInfo->type, node.initialization->typeInfo->type, ctx))
-		//{
-		//	std::string message = "incompatible type for \"" + identifier + "\", expected ";
-		//	message += DebugUtils::typeKindToString(node.typeInfo->type);
-		//	message += ", but got ";
-		//	message += DebugUtils::typeKindToString(node.initialization->typeInfo->type);
-		//	reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleType, node.line, node.col);
-		//	node.typeInfo->type = TypeKind::Unknown;
-		//	return;
-		//}
-
-		//if (ctx.level != DiagnosticLevel::None)
-		//	reportDiagnostic(ctx.message, ctx.level, ctx.type, node.line, node.col);
-
-		// at this point we know the types of the variable and initializer are compatible, however literals always try to fit into the smallest
-		// type they can, so if we have x : i32 = 10, 10 will default to i8, but we can safely widen to match the variable i32 which is what this checks
-		//if ((SemanticUtils::isInteger(node.typeInfo->type) && (SemanticUtils::getIntegerWidth(node.initialization->typeInfo->type) < SemanticUtils::getIntegerWidth(node.typeInfo->type)))
-		//	|| (SemanticUtils::isFloat(node.typeInfo->type) && (SemanticUtils::getFloatWidth(node.initialization->typeInfo->type) < SemanticUtils::getFloatWidth(node.typeInfo->type))))
-		//{
-		//	ASTExpr* initializer = node.initialization;
-		//	ASTCast* implicitCast = nodeArena->alloc<ASTCast>(initializer);
-		//	implicitCast->typeInfo = typeArena->alloc<TypeInfo>();
-		//	implicitCast->typeInfo->type = node.typeInfo->type;
-		//	node.initialization = implicitCast;
-		//}
-	}
-
-	node.scope = env.getScopeDepth();
-	node.slotIndex = table.declareVar(identifier, node.typeInfo, node.scope);
 }
 
 void SemanticAnalysis::visitFuncDecl(ASTFuncDecl& node)
 {
-	SymbolTable& table = env.getCurrentScope();
-	std::string& funcIdentifier = std::get<std::string>(node.funcIdentifier.value);
-	node.typeInfo = typeArena->alloc<TypeInfo>();
-
-	if (table.isDefined(funcIdentifier))
-	{
-		std::string message = "cannot define multiple functions with the same name \"" + funcIdentifier +"\"";
-		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::DuplicateIdentifier, ErrorPhase::Semantic, node.line, node.col);
-		node.typeInfo->type = TypeKind::Unknown;
-		return;
-	}
-
-	node.typeInfo->returnType = typeArena->alloc<TypeInfo>();
-	node.typeInfo->name = funcIdentifier;
-	node.typeInfo->type = TypeKind::Function;
-	node.typeInfo->returnType->type = SemanticUtils::getTypeFromToken(node.returnType.type);
-
-	// declare function in outer scope
-	table.declareFunc(funcIdentifier, node.typeInfo, env.getScopeDepth());
-
 	// enter inner function scope
-	env.pushScope(ScopeKind::Function);
-	SymbolTable& funcScope = env.getCurrentScope();
+	env->pushScope(node.scope, ScopeKind::Function);
 
 	// set the semantic analysis functionCtx to the current ASTFuncDecl's type information
-	//functionCtx = node.typeInfo;
 	functionCtxStack.push_back(node.typeInfo);
 	visitParamList(*node.params);
 
@@ -163,34 +120,32 @@ void SemanticAnalysis::visitFuncDecl(ASTFuncDecl& node)
 	visitBlock(*node.body);
 	
 	// after visiting param list / body / whatever other functionCtx related information, reset the ctx back to nullptr
-	//functionCtx = nullptr;
 	functionCtxStack.pop_back();
-	env.dumpEnvironment();
-	env.popScope();
+	env->dumpEnvironment();
+	env->popScope();
 }
 
 void SemanticAnalysis::visitIdentifier(ASTIdentifier& node)
 {
-	// try to find the symbol in the environment
+	// variable symbols are guaranteed to be valid because of symbol resolution, but function identifiers are not.
+	// this is because out of order function calls are allowed, so function calls are not checked during symbol resolution
+	// so we need to check the symbol here
 	std::string& identifier = std::get<std::string>(node.identifier.value);
-	Symbol* symbol = env.findSymbol(identifier);
-	
-	// if we find the symbol, set this nodes type info to the symbols type info, otherwise set it to unknown
-	if (symbol)
+	Symbol* symbol = env->findSymbol(identifier);
+
+	if (!symbol)
 	{
-		// this line feels like a bug, since symbol tables are deleted after semantic analysis, unless I make them persistent later no
-		// but the code breaks if i change it
-		node.typeInfo = symbol->typeInfo; 
-		node.slotIndex = symbol->slotIndex;
-		node.scope = symbol->scope;
-	}
-	else
-	{
+		// if the symbol is not found, set type to Unknown (This will only occur when the user tries to call an undefined function)
 		std::string message = "undefined identifier \"" + identifier + "\"";
 		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::UndefinedIdentifier, ErrorPhase::Semantic, node.line, node.col);
 		node.typeInfo = typeArena->alloc<TypeInfo>();
 		node.typeInfo->type = TypeKind::Unknown;
-	}
+		return;
+	} 
+
+	node.typeInfo = symbol->typeInfo;
+	node.slotIndex = symbol->slotIndex;
+	node.scope = symbol->scope;
 }
 
 void SemanticAnalysis::visitExprStmt(ASTExprStmt& node)
@@ -200,20 +155,10 @@ void SemanticAnalysis::visitExprStmt(ASTExprStmt& node)
 
 void SemanticAnalysis::visitAssign(ASTAssign& node)
 {
-	/*
-	get type info for value 
-	make sure its compatible with the identifier
-	
-	assignment operators are:
-	=, +=, -=, *=, /=, ^=, &=, |=, <<=, >>=
-
-	*/
-
-	//std::string& identifier = std::get<std::string>(node.identifier.value);
 	node.assignee->accept(*this);
 	node.typeInfo = node.assignee->typeInfo;
 	std::string identifier = node.typeInfo->name;
-	Symbol* symbol = env.findSymbol(identifier);
+	Symbol* symbol = env->findSymbol(identifier);
 
 	if (!symbol)
 	{
@@ -238,62 +183,33 @@ void SemanticAnalysis::visitReturn(ASTReturn& node)
 		return;
 	}
 
-	// if there's no return val, that means the function returns void, check to make sure the signature returns void
-	//if (!node.returnVal)
-	//{
-	//	if (functionCtx->returnType->type != TypeKind::Void)
-	//		reportDiagnostic("missing return statement from function expecting non-void return type", DiagnosticLevel::Error, DiagnosticType::IncompatibleReturnType, node.line, node.col);
-
-	//	return;
-	//}
-
-	// if functionCtx is valid, we need to resolve the type of the return value and make sure it matches the function signatures return type
+	// if functionCtx is valid, we need to resolve the type of the return value
 	if (node.returnVal)
 		node.returnVal->accept(*this);
-
-	//std::cout << DebugUtils::typeKindToString(functionCtx->returnType->type) << std::endl;
-	//std::cout << DebugUtils::typeKindToString(node.returnVal->typeInfo->type) << std::endl;
-	//Diagnostic ctx;
-	//if (!SemanticUtils::isAssignable(functionCtx->returnType->type, node.returnVal->typeInfo->type, ctx))
-	//{
-	//	std::string message = "incompatible function return type, expected ";
-	//	message += DebugUtils::typeKindToString(functionCtx->returnType->type);
-	//	message += " or convertible type, but got ";
-	//	message += DebugUtils::typeKindToString(node.returnVal->typeInfo->type);
-	//	reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleReturnType, node.line, node.col);
-	//	return;
-	//}
-
-	//if (ctx.level != DiagnosticLevel::None)
-	//	reportDiagnostic(ctx.message, ctx.level, ctx.type, node.line, node.col);
 }
 
 void SemanticAnalysis::visitBlock(ASTBlock& node)
 {
 	if (node.createScope)
-		env.pushScope(ScopeKind::Normal);
+		env->pushScope(node.scope, ScopeKind::Normal);
 
 	for (ASTStmt* stmt : node.statements)
 		stmt->accept(*this);
 
-	env.dumpEnvironment();
+	env->dumpEnvironment();
 	if (node.createScope)
-		env.popScope();
+		env->popScope();
 }
 
 void SemanticAnalysis::visitForLoop(ASTForLoop& node)
 {
-	env.pushScope(ScopeKind::Normal);
+	env->pushScope(node.scope, ScopeKind::Normal);
 	
 	if (node.initializer)
 		node.initializer->accept(*this);
 
 	if (node.condition)
-	{
 		node.condition->accept(*this);
-		//if (node.condition->typeInfo->type != TypeKind::Bool)
-		//	reportDiagnostic("for loop condition must be of type bool", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, node.line, node.col);
-	}
 
 	if (node.increment)
 		node.increment->accept(*this);
@@ -301,29 +217,23 @@ void SemanticAnalysis::visitForLoop(ASTForLoop& node)
 	node.body->createScope = false;
 	visitBlock(*node.body);
 
-	env.dumpEnvironment();
-	env.popScope();
+	env->dumpEnvironment();
+	env->popScope();
 }
 
 void SemanticAnalysis::visitWhileLoop(ASTWhileLoop& node)
 {
 	node.condition->accept(*this);
-	//if (node.condition->typeInfo->type != TypeKind::Bool)
-	//	reportDiagnostic("while loop condition must be of type bool", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, node.line, node.col);
-
 	visitBlock(*node.body);
 }
 
 void SemanticAnalysis::visitIfStatement(ASTIfStatement& node)
 {
+	// condition and true branch are required to be in an if statement
 	node.condition->accept(*this);
-	//if (node.condition->typeInfo->type != TypeKind::Bool)
-	//{
-	//	reportDiagnostic("if statement condition must be of type bool", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, node.line, node.col);
-	//	return;
-	//}
-
 	node.trueBranch->accept(*this);
+
+	// check if there is a false branch, since they're not required
 	if (node.falseBranch)
 		node.falseBranch->accept(*this);
 }
@@ -343,53 +253,9 @@ void SemanticAnalysis::visitBinaryExpr(ASTBinaryExpr& node)
 	node.lhs->accept(*this);
 	node.rhs->accept(*this);
 
+	// default to the lhs type, the type checker will resolve the type of this node and the two operands
 	node.typeInfo = typeArena->alloc<TypeInfo>();
-	node.typeInfo->type = node.lhs->typeInfo->type;	// unknown type till type checking phase since type depends on operands
-	/*if (SemanticUtils::isComparisonOp(node.op.type))
-	{
-		if (SemanticUtils::tryComparison(*node.lhs->typeInfo, *node.rhs->typeInfo))
-			node.typeInfo->type = TypeKind::Bool;
-		else
-		{
-			std::string message = "incompatible types ";
-			message += DebugUtils::typeKindToString(node.lhs->typeInfo->type);
-			message += " and ";
-			message += DebugUtils::typeKindToString(node.rhs->typeInfo->type);
-			message += " for comparison operation";
-			reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-			node.typeInfo->type = TypeKind::Unknown;
-		}
-	}
-	else if (SemanticUtils::isArithmeticOp(node.op.type))
-	{
-		if (SemanticUtils::tryArithmetic(*node.lhs->typeInfo, *node.rhs->typeInfo))
-			node.typeInfo->type = node.lhs->typeInfo->type;
-		else
-		{
-			std::string message = "incompatible types ";
-			message += DebugUtils::typeKindToString(node.lhs->typeInfo->type);
-			message += " and ";
-			message += DebugUtils::typeKindToString(node.rhs->typeInfo->type);
-			message += " for arithmetic operation";
-			reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-			node.typeInfo->type = TypeKind::Unknown;
-		}
-	}
-	else if (SemanticUtils::isBitwiseOp(node.op.type))
-	{
-		if (SemanticUtils::tryBitwise(*node.lhs->typeInfo, *node.rhs->typeInfo))
-			node.typeInfo->type = node.lhs->typeInfo->type;
-		else
-		{
-			std::string message = "incompatible types ";
-			message += DebugUtils::typeKindToString(node.lhs->typeInfo->type);
-			message += " and ";
-			message += DebugUtils::typeKindToString(node.rhs->typeInfo->type);
-			message += " for bitwise operation";
-			reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-			node.typeInfo->type = TypeKind::Unknown;
-		}
-	}*/
+	node.typeInfo->type = node.lhs->typeInfo->type;
 }
 
 void SemanticAnalysis::visitUnaryExpr(ASTUnaryExpr& node)
@@ -397,75 +263,24 @@ void SemanticAnalysis::visitUnaryExpr(ASTUnaryExpr& node)
 	node.expr->accept(*this);
 	node.typeInfo = typeArena->alloc<TypeInfo>();
 	node.typeInfo->type = TypeKind::Unknown;
-
-	// '!' is only defined for bool types
-	//if (node.op.type == TokenType::LogicalNot)
-	//{
-	//	if (node.expr->typeInfo->type != TypeKind::Bool)
-	//	{
-	//		reportDiagnostic("operator \"!\" can only be applied to bool types", DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-	//		node.typeInfo->type = TypeKind::Unknown;
-	//		return;
-	//	}
-
-	//	node.typeInfo->type = TypeKind::Bool;
-	//}
-
-	//// infix '++', '--', '~' is only defined for integer or unsigned integer types
-	//else if (node.op.type == TokenType::Increment || node.op.type == TokenType::Decrement || node.op.type == TokenType::BitwiseNot)
-	//{
-	//	if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
-	//	{
-	//		std::string message = "operator ";
-	//		message += DebugUtils::tokenTypeToString(node.op);
-	//		message += "can only be applied to unsigned or signed integers";
-	//		reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-	//		node.typeInfo->type = TypeKind::Unknown;
-	//		return;
-	//	}
-
-	//	node.typeInfo->type = node.expr->typeInfo->type;
-	//}
-
-	//else if (node.op.type == TokenType::Minus)
-	//{
-	//	if (!SemanticUtils::isNumeric(node.expr->typeInfo->type))
-	//	{
-	//		reportDiagnostic("unary '-' can only be applied to numeric types", DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-	//		node.typeInfo->type = TypeKind::Unknown;
-	//		return;
-	//	}
-
-	//	node.typeInfo->type = node.expr->typeInfo->type;
-	//}
-	//else
-	//{
-	//	reportDiagnostic("unknown unary operator", DiagnosticLevel::Error, DiagnosticType::UnknownOperator, node.line, node.col);
-	//	node.typeInfo->type = TypeKind::Unknown;
-	//}
 }
 
 void SemanticAnalysis::visitCall(ASTCall& node)
 {
 	// get type info for the callee and make sure it's a function
 	node.callee->accept(*this);
-	//if (node.callee->typeInfo->type != TypeKind::Function)
-	//{
-	//	reportDiagnostic("could not resolve function call", DiagnosticLevel::Error, DiagnosticType::UnresolvedFunctionCall, node.line, node.col);
-	//	node.typeInfo = typeArena->alloc<TypeInfo>();
-	//	node.typeInfo->type = TypeKind::Unknown;
-	//	return;
-	//}
+
+	// make sure the type isnt unknown, undefined functions will set the callee's type info to Unknown to indicate an error
+	if (node.callee->typeInfo->type == TypeKind::Unknown)
+		return;
 
 	// set function ctx, and verify the arguments passed in match the function signature
-	//functionCtx = node.callee->typeInfo;
 	functionCtxStack.push_back(node.callee->typeInfo);
 	visitArgList(*node.args);
 
 	// lastly, the ASTCall node type info should be the return type of the function call
 	node.typeInfo = functionCtxStack.back()->returnType;
 	functionCtxStack.pop_back();
-	//functionCtx = nullptr;
 }
 
 void SemanticAnalysis::visitGroupExpr(ASTGroupExpr& node)
@@ -479,33 +294,11 @@ void SemanticAnalysis::visitPostfix(ASTPostfix& node)
 	node.expr->accept(*this);
 	node.typeInfo = typeArena->alloc<TypeInfo>();
 	node.typeInfo->type = TypeKind::Unknown;
-
-	//if (node.op.type == TokenType::Increment || node.op.type == TokenType::Decrement)
-	//{
-	//	if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
-	//	{
-	//		std::string message = "postix ";
-	//		message += DebugUtils::tokenTypeToString(node.op);
-	//		message += " can only be applied to unsigned or signed integers";
-	//		reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, node.line, node.col);
-	//		node.typeInfo->type = TypeKind::Unknown;
-	//		return;
-	//	}
-
-	//	node.typeInfo->type = node.expr->typeInfo->type;
-	//}
-	//else
-	//{
-	//	reportDiagnostic("unknown postfix operator", DiagnosticLevel::Error, DiagnosticType::UnknownOperator, node.line, node.col);
-	//	node.typeInfo->type = TypeKind::Unknown;
-	//}
 }
 
 void SemanticAnalysis::visitParameter(ASTParameter& node)
 {
-	node.typeInfo = typeArena->alloc<TypeInfo>();
-	node.typeInfo->name = std::get<std::string>(node.paramIdentifier.value);
-	node.typeInfo->type = SemanticUtils::getTypeFromToken(node.paramType.type);
+	
 }
 
 void SemanticAnalysis::visitArgument(ASTArgument& node)
@@ -516,25 +309,7 @@ void SemanticAnalysis::visitArgument(ASTArgument& node)
 
 void SemanticAnalysis::visitParamList(ASTParamList& node)
 {
-	// if functionCtx is a valid pointer, we know this parameter list belongs to a function declaration
-	if (functionCtxStack.size() > 0)
-	{
-		SymbolTable& table = env.getCurrentScope();
-		for (ASTParameter* param : node.params)
-		{
-			visitParameter(*param);
-			std::string& paramIdentifier = param->typeInfo->name;
-			
-			if (table.isDefined(paramIdentifier))
-			{
-				std::string message = "duplicate parameter name \"" + paramIdentifier + "\" in function \"" + functionCtxStack.back()->name + "\"()";
-				diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::DuplicateIdentifier, ErrorPhase::Semantic, node.line, node.col);
-			}
-
-			table.declareVar(paramIdentifier, param->typeInfo, env.getScopeDepth());
-			functionCtxStack.back()->paramTypes.emplace_back(param->typeInfo);
-		}
-	}
+	
 }
 
 void SemanticAnalysis::visitArgList(ASTArgList& node)
@@ -543,41 +318,27 @@ void SemanticAnalysis::visitArgList(ASTArgList& node)
 	// we also need to make sure the type of each arg corresponds to the type of each expected parameter
 	if (functionCtxStack.size() > 0)
 	{
-		//if (node.args.size() != functionCtx->paramTypes.size())
-		//{
-		//	std::string message = "mismatched function argument count, expected ";
-		//	message += functionCtx->paramTypes.size();
-		//	message += ", but got ";
-		//	message += node.args.size();
-		//	reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, node.line, node.col);
-		//	return;
-		//}
+		if (!functionCtxStack.back())
+			std::cout << "BACK OF FUNCTION CTX IS NULLPTR\n";
+		std::cout << "visiting arg list, paramTypes.size = " << functionCtxStack.back()->paramTypes.size();
+		if (node.args.size() != functionCtxStack.back()->paramTypes.size())
+		{
+			std::string message = "mismatched function argument count, expected ";
+			message += std::to_string(functionCtxStack.back()->paramTypes.size());
+			message += ", but got ";
+			message += std::to_string(node.args.size());
+			diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, ErrorPhase::Semantic, node.line, node.col);
+			return;
+		}
 		
 		for (size_t i = 0; i < node.args.size(); i++)
 		{
-			//Diagnostic ctx;
+			// get type info for the arg
 			node.args[i]->accept(*this);
-			//if (!SemanticUtils::isAssignable(functionCtx->paramTypes[i]->type, node.args[i]->typeInfo->type, ctx))
-			//{
-			//	std::string message = "expected argument type ";
-			//	message += DebugUtils::typeKindToString(functionCtx->paramTypes[i]->type);
-			//	message += ", but got type ";
-			//	message += DebugUtils::typeKindToString(node.args[i]->typeInfo->type);
-			//	reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleType, node.args[i]->line, node.args[i]->col);
-			//	continue;
-			//}
 
-			//if (ctx.level != DiagnosticLevel::None)
-			//	reportDiagnostic(ctx.message, ctx.level, ctx.type, node.args[i]->line, node.args[i]->col);
-
-			// set the args type to the expected parameter type if it's compatible with the declared parameter type
-			node.args[i]->typeInfo->type = functionCtxStack.back()->paramTypes[i]->type;
+			// i dont think this line should be here, we should leave it to the type checker to make sure the type is convertible or matches exactly
+			// not directly set it to the parameters type
+			//node.args[i]->typeInfo->type = functionCtxStack.back()->paramTypes[i]->type;
 		}
 	}
-}
-
-void SemanticAnalysis::visitCast(ASTCast& node)
-{
-	// should be empty i think, casts are only placed in the AST for implicit casts right now, when explicit casts are added
-	// i think some code should go here
 }

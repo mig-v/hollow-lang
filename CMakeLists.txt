@@ -28,6 +28,7 @@ add_executable(hollow-lang src/main.cpp
                            src/type_conversions.cpp
                            src/vm_function_table.cpp
                            src/vm.cpp
+                           src/symbol_resolution.cpp
                            include/lexer.h
                            include/token.h
                            include/transition_table.h
@@ -58,7 +59,9 @@ add_executable(hollow-lang src/main.cpp
                            include/type_conversions.h
                            include/l_value.h
                            include/vm_function_table.h
-                           include/vm.h)
+                           include/vm.h
+                           include/symbol_resolution.h
+                           include/ast_visitor.h)
 
 target_include_directories(hollow-lang PUBLIC include/)
 target_compile_definitions(hollow-lang PUBLIC TEST_PATH="${CMAKE_CURRENT_SOURCE_DIR}/tests")

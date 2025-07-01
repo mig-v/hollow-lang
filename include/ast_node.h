@@ -7,6 +7,7 @@
 #include "type_info.h"
 
 // forward declare any visitor classes needed
+class ASTVisitor;
 class ASTPrinter;
 class SemanticAnalysis;
 class BytecodeEmitter;
@@ -19,11 +20,10 @@ class ASTArgument;
 class ASTNode
 {
 public:
+	virtual ~ASTNode() = default;
 	virtual bool operator==(const ASTNode& other) const = 0 ;	// only used for testing the parser, should never be called when actually parsing
 	virtual void accept(ASTPrinter visitor, uint32_t depth) = 0;
-	virtual void accept(SemanticAnalysis& visitor) = 0;
-	virtual void accept(BytecodeEmitter& visitor) = 0;
-	virtual void accept(TypeChecker& visitor) = 0;
+	virtual void accept(ASTVisitor& visitor) = 0;
 
 	uint32_t line;
 	uint32_t col;
@@ -45,9 +45,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	Token paramIdentifier;
 	Token paramType;
@@ -61,9 +59,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	std::vector<ASTParameter*> params;
 };
@@ -75,9 +71,7 @@ public:
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
-	void accept(SemanticAnalysis& visitor);
-	void accept(BytecodeEmitter& visitor);
-	void accept(TypeChecker& visitor);
+	void accept(ASTVisitor& visitor);
 
 	std::vector<ASTArgument*> args;
 };

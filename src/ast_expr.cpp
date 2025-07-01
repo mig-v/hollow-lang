@@ -25,17 +25,7 @@ void ASTIntLiteral::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitIntLiteral(*this, depth);
 }
 
-void ASTIntLiteral::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitIntLiteral(*this);
-}
-
-void ASTIntLiteral::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitIntLiteral(*this);
-}
-
-void ASTIntLiteral::accept(TypeChecker& visitor)
+void ASTIntLiteral::accept(ASTVisitor& visitor)
 {
 	visitor.visitIntLiteral(*this);
 }
@@ -61,17 +51,7 @@ void ASTDoubleLiteral::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitDoubleLiteral(*this, depth);
 }
 
-void ASTDoubleLiteral::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitDoubleLiteral(*this);
-}
-
-void ASTDoubleLiteral::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitDoubleLiteral(*this);
-}
-
-void ASTDoubleLiteral::accept(TypeChecker& visitor)
+void ASTDoubleLiteral::accept(ASTVisitor& visitor)
 {
 	visitor.visitDoubleLiteral(*this);
 }
@@ -95,17 +75,7 @@ void ASTCharLiteral::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitCharLiteral(*this, depth);
 }
 
-void ASTCharLiteral::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitCharLiteral(*this);
-}
-
-void ASTCharLiteral::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitCharLiteral(*this);
-}
-
-void ASTCharLiteral::accept(TypeChecker& visitor)
+void ASTCharLiteral::accept(ASTVisitor& visitor)
 {
 	visitor.visitCharLiteral(*this);
 }
@@ -129,17 +99,7 @@ void ASTBoolLiteral::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitBoolLiteral(*this, depth);
 }
 
-void ASTBoolLiteral::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitBoolLiteral(*this);
-}
-
-void ASTBoolLiteral::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitBoolLiteral(*this);
-}
-
-void ASTBoolLiteral::accept(TypeChecker& visitor)
+void ASTBoolLiteral::accept(ASTVisitor& visitor)
 {
 	visitor.visitBoolLiteral(*this);
 }
@@ -165,17 +125,7 @@ void ASTIdentifier::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitIdentifier(*this, depth);
 }
 
-void ASTIdentifier::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitIdentifier(*this);
-}
-
-void ASTIdentifier::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitIdentifier(*this);
-}
-
-void ASTIdentifier::accept(TypeChecker& visitor)
+void ASTIdentifier::accept(ASTVisitor& visitor)
 {
 	visitor.visitIdentifier(*this);
 }
@@ -206,17 +156,7 @@ void ASTAssign::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitAssign(*this, depth);
 }
 
-void ASTAssign::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitAssign(*this);
-}
-
-void ASTAssign::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitAssign(*this);
-}
-
-void ASTAssign::accept(TypeChecker& visitor)
+void ASTAssign::accept(ASTVisitor& visitor)
 {
 	visitor.visitAssign(*this);
 }
@@ -246,17 +186,7 @@ void ASTLogical::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitLogical(*this, depth);
 }
 
-void ASTLogical::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitLogical(*this);
-}
-
-void ASTLogical::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitLogical(*this);
-}
-
-void ASTLogical::accept(TypeChecker& visitor)
+void ASTLogical::accept(ASTVisitor& visitor)
 {
 	visitor.visitLogical(*this);
 }
@@ -286,17 +216,7 @@ void ASTBinaryExpr::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitBinaryExpr(*this, depth);
 }
 
-void ASTBinaryExpr::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitBinaryExpr(*this);
-}
-
-void ASTBinaryExpr::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitBinaryExpr(*this);
-}
-
-void ASTBinaryExpr::accept(TypeChecker& visitor)
+void ASTBinaryExpr::accept(ASTVisitor& visitor)
 {
 	visitor.visitBinaryExpr(*this);
 }
@@ -325,17 +245,7 @@ void ASTUnaryExpr::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitUnaryExpr(*this, depth);
 }
 
-void ASTUnaryExpr::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitUnaryExpr(*this);
-}
-
-void ASTUnaryExpr::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitUnaryExpr(*this);
-}
-
-void ASTUnaryExpr::accept(TypeChecker& visitor)
+void ASTUnaryExpr::accept(ASTVisitor& visitor)
 {
 	visitor.visitUnaryExpr(*this);
 }
@@ -363,17 +273,7 @@ void ASTCall::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitCall(*this, depth);
 }
 
-void ASTCall::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitCall(*this);
-}
-
-void ASTCall::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitCall(*this);
-}
-
-void ASTCall::accept(TypeChecker& visitor)
+void ASTCall::accept(ASTVisitor& visitor)
 {
 	visitor.visitCall(*this);
 }
@@ -397,17 +297,7 @@ void ASTGroupExpr::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitGroupExpr(*this, depth);
 }
 
-void ASTGroupExpr::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitGroupExpr(*this);
-}
-
-void ASTGroupExpr::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitGroupExpr(*this);
-}
-
-void ASTGroupExpr::accept(TypeChecker& visitor)
+void ASTGroupExpr::accept(ASTVisitor& visitor)
 {
 	visitor.visitGroupExpr(*this);
 }
@@ -436,17 +326,7 @@ void ASTPostfix::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitPostfix(*this, depth);
 }
 
-void ASTPostfix::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitPostfix(*this);
-}
-
-void ASTPostfix::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitPostfix(*this);
-}
-
-void ASTPostfix::accept(TypeChecker& visitor)
+void ASTPostfix::accept(ASTVisitor& visitor)
 {
 	visitor.visitPostfix(*this);
 }
@@ -470,17 +350,7 @@ void ASTArgument::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitArgument(*this, depth);
 }
 
-void ASTArgument::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitArgument(*this);
-}
-
-void ASTArgument::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitArgument(*this);
-}
-
-void ASTArgument::accept(TypeChecker& visitor)
+void ASTArgument::accept(ASTVisitor& visitor)
 {
 	visitor.visitArgument(*this);
 }
@@ -503,17 +373,7 @@ void ASTCast::accept(ASTPrinter visitor, uint32_t depth)
 	visitor.visitCast(*this, depth);
 }
 
-void ASTCast::accept(SemanticAnalysis& visitor)
-{
-	visitor.visitCast(*this);
-}
-
-void ASTCast::accept(BytecodeEmitter& visitor)
-{
-	visitor.visitCast(*this);
-}
-
-void ASTCast::accept(TypeChecker& visitor)
+void ASTCast::accept(ASTVisitor& visitor)
 {
 	visitor.visitCast(*this);
 }

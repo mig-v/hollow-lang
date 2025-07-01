@@ -6,6 +6,7 @@
 #include "type_checker.h"
 #include "bytecode_emitter.h"
 #include "bytecode_disassembler.h"
+#include "symbol_resolution.h"
 #include "vm.h"
 #include "memory_arena.h"
 #include "diagnostic.h"
@@ -27,6 +28,7 @@ private:
 
 	Lexer* lexer;
 	Parser* parser;
+	SymbolResolution* symbolResolution;
 	SemanticAnalysis* semanticAnalysis;
 	TypeChecker* typeChecker;
 	BytecodeEmitter* bytecodeEmitter;

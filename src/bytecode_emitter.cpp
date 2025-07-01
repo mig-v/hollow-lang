@@ -10,11 +10,15 @@ BytecodeEmitter::BytecodeEmitter()
 
 void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 {
+	// emit all top level code
 	for (ASTNode* node : ast)
 		node->accept(*this);
 
-	// emit a HALT instruction after top level code. Everything below this point are functions, which should not be executed directly
-	// they must be executed via a CALL instruction
+
+	// emit a call to main followed by a HALT instruction after top level code. Everything below this point are functions, which should not
+	// be executed directly they must be executed via a CALL instruction
+	// bytecode layout looks like -> [Top level statements ... ] -> [call main] -> [HALT] -> [function declarations]
+	emitCallToMain();
 	emit(Opcode::HALT);
 
 	// go back and generate bytecode for all deferred functions
@@ -25,6 +29,16 @@ void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 		resolveDeferredCall(call);
 
 	functionTable.dumpTable();
+}
+
+void BytecodeEmitter::emitCallToMain()
+{
+	VMFunctionEntry* main = functionTable.lookupFunctionByName("main");
+	emit(Opcode::CALL);
+	emit16(main->funcIndex);
+
+	// right now, main has 0 args, but eventually command line args will be added and this will have to change
+	emit8(0);
 }
 
 void BytecodeEmitter::emitDefaultValue(TypeKind type)
@@ -107,6 +121,7 @@ void BytecodeEmitter::resolveDeferredFunction(ASTFuncDecl* function)
 	// this is guaranteed to be in the function table at this point, no need to check against nullptr
 	VMFunctionEntry* entry = functionTable.lookupFunctionByName(std::get<std::string>(function->funcIdentifier.value));
 	entry->startAddress = bytecode.size();
+	std::cout << "resolving deferred function for " << entry->name << std::endl;
 
 	function->body->accept(*this);
 }
@@ -118,6 +133,15 @@ void BytecodeEmitter::resolveDeferredCall(DeferredCall& deferredCall)
 	// where the first two 0's are dummy values for the funcIndex, and the last 0 is a dummy value for the arg count
 	
 	VMFunctionEntry* function = functionTable.lookupFunctionByName(deferredCall.call->callee->typeInfo->name);
+	std::cout << "resolving deferred call for function " 
+		<< function->name 
+		<< " func index = " 
+		<< function->funcIndex 
+		<< " arg count = " 
+		<< function->argCount 
+		<< " start address = "
+		<< function->startAddress
+		<< std::endl;
 	insert16(function->funcIndex, deferredCall.callAddress);
 	insert8(function->argCount, deferredCall.callAddress + 2);
 }
@@ -720,7 +744,7 @@ void BytecodeEmitter::visitForLoop(ASTForLoop& node)
 	}
 	
 	emit(Opcode::JMP_IF_FALSE);
-	conditionCtxStack.back().end.jumpPatches.push_back(bytecode.size());
+	conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 	emit16(0);
 
 	node.body->accept(*this);
@@ -731,8 +755,8 @@ void BytecodeEmitter::visitForLoop(ASTForLoop& node)
 	emit(Opcode::JMP);
 	emit16(startAddress);
 
-	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, bytecode.size());
-	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, bytecode.size());
+	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	conditionCtxStack.pop_back();
 }
 
@@ -750,7 +774,7 @@ void BytecodeEmitter::visitWhileLoop(ASTWhileLoop& node)
 	// if the condition is false, we need to jump to the end of the while loop. we don't know yet where the end is so we
 	// put in a temp address of 0, then patch in the real address at the end of the while loop
 	emit(Opcode::JMP_IF_FALSE);
-	conditionCtxStack.back().end.jumpPatches.push_back(bytecode.size());
+	conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 	emit16(0);
 
 	// visit the body
@@ -762,8 +786,8 @@ void BytecodeEmitter::visitWhileLoop(ASTWhileLoop& node)
 	emit16(startAddress);
 
 	// false and end jumps are both jumping to the same place, they're just jumping to the next valid instruction after the while loop
-	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, bytecode.size());
-	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, bytecode.size());
+	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	conditionCtxStack.pop_back();
 }
 
@@ -775,24 +799,24 @@ void BytecodeEmitter::visitIfStatement(ASTIfStatement& node)
 	shortCircuitCtx = false;
 
 	// patch in label jumps for whatever Label right BEFORE the code for that label should start
-	patchLabelJumps(conditionCtxStack.back().trueBranch.jumpPatches, bytecode.size());
+	patchLabelJumps(conditionCtxStack.back().trueBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	node.trueBranch->accept(*this);
 
 	// if there's a false branch, we need to emit a JMP after the true branch to skip over the true branch if the condition is false
 	if (node.falseBranch)
 	{
 		emit(Opcode::JMP);
-		conditionCtxStack.back().end.jumpPatches.push_back(bytecode.size());
+		conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 		emit16(0);
-		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, bytecode.size());
+		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 		node.falseBranch->accept(*this);
-		patchLabelJumps(conditionCtxStack.back().end.jumpPatches, bytecode.size());
+		patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	}
 
 	// otherwise, if there's not a false branch, we just need to fill in the patchSites to jump to the end of the if statement
 	else
 	{
-		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, bytecode.size());
+		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	}
 
 	conditionCtxStack.pop_back();
@@ -807,28 +831,28 @@ void BytecodeEmitter::visitLogical(ASTLogical& node)
 		{
 			node.lhs->accept(*this);
 			emit(Opcode::JMP_IF_FALSE);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(bytecode.size());
+			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 			emit16(0);	// emit temp jump address, since we dont know where the false branch will be located
 
 			node.rhs->accept(*this);
 			emit(Opcode::JMP_IF_FALSE);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(bytecode.size());
+			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 			emit16(0);
 		}
 		else if (node.logicalOperator.type == TokenType::LogicalOr)
 		{
 			node.lhs->accept(*this);
 			emit(Opcode::JMP_IF_TRUE);
-			conditionCtxStack.back().trueBranch.jumpPatches.push_back(bytecode.size());
+			conditionCtxStack.back().trueBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 			emit16(0);
 
 			node.rhs->accept(*this);
 			emit(Opcode::JMP_IF_TRUE);
-			conditionCtxStack.back().trueBranch.jumpPatches.push_back(bytecode.size());
+			conditionCtxStack.back().trueBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 			emit16(0);
 
 			emit(Opcode::JMP);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(bytecode.size());
+			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 			emit16(0);
 		}
 	}
@@ -958,6 +982,7 @@ void BytecodeEmitter::visitCall(ASTCall& node)
 	// if the callee resolves to a function already in the function table, great, emit code for the call
 	if (VMFunctionEntry* function = functionTable.lookupFunctionByName(node.callee->typeInfo->name))
 	{
+		std::cout << "found function in VM Function Table: " << node.callee->typeInfo->name << std::endl;
 		node.args->accept(*this);
 		emit(Opcode::CALL);
 		emit16(function->funcIndex);
@@ -974,6 +999,9 @@ void BytecodeEmitter::visitCall(ASTCall& node)
 		deferredCall.callAddress = bytecode.size();
 		emit16(0);
 		emit8(0);
+		deferredCalls.emplace_back(deferredCall);
+		std::cout << "deferring function call for: " << node.callee->typeInfo->name << " setting call address to " << deferredCall.callAddress << std::endl;
+
 	}
 }
 
@@ -1009,19 +1037,9 @@ void BytecodeEmitter::visitPostfix(ASTPostfix& node)
 	emit16(static_cast<uint16_t>(node.slotIndex));
 }
 
-void BytecodeEmitter::visitParameter(ASTParameter& node)
-{
-	// no codegen
-}
-
 void BytecodeEmitter::visitArgument(ASTArgument& node)
 {
 	node.value->accept(*this);
-}
-
-void BytecodeEmitter::visitParamList(ASTParamList& node)
-{
-	// no codegen
 }
 
 void BytecodeEmitter::visitArgList(ASTArgList& node)

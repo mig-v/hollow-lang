@@ -28,6 +28,7 @@ private:
 	VMFunctionTable* functionTable;
 	std::array<VMFuncPtr, static_cast<size_t>(Opcode::NUM_OPCODES)> opcodeTable;
 	std::vector<uint64_t> stack;
+	std::vector<uint64_t> globals;
 	std::vector<StackFrame> callStack;
 	std::vector<uint8_t> bytecode;
 
@@ -44,6 +45,8 @@ private:
 
 	uint64_t loadLocal(uint16_t slot);
 	void storeLocal(uint16_t slot, uint64_t value);
+	uint64_t loadGlobal(uint16_t slot);
+	void storeGlobal(uint16_t slot, uint64_t value);
 
 	void pushStackFrame(size_t basePointer, size_t returnAddress, size_t retSP);
 	void popStackFrame();
@@ -56,13 +59,21 @@ private:
 	void PUSH_U8(); void PUSH_U16(); void PUSH_U32(); void PUSH_U64();
 	void PUSH_F32(); void PUSH_F64(); void PUSH_CHAR(); void PUSH_BOOL();
 
-	void LOAD_I8(); void LOAD_I16(); void LOAD_I32(); void LOAD_I64();
-	void LOAD_U8(); void LOAD_U16(); void LOAD_U32(); void LOAD_U64();
-	void LOAD_F32(); void LOAD_F64(); void LOAD_CHAR(); void LOAD_BOOL();
+	void LDL_I8(); void LDL_I16(); void LDL_I32(); void LDL_I64();
+	void LDL_U8(); void LDL_U16(); void LDL_U32(); void LDL_U64();
+	void LDL_F32(); void LDL_F64(); void LDL_CHAR(); void LDL_BOOL();
 
-	void STORE_I8(); void STORE_I16(); void STORE_I32(); void STORE_I64();
-	void STORE_U8(); void STORE_U16(); void STORE_U32(); void STORE_U64();
-	void STORE_F32(); void STORE_F64(); void STORE_CHAR(); void STORE_BOOL();
+	void STL_I8(); void STL_I16(); void STL_I32(); void STL_I64();
+	void STL_U8(); void STL_U16(); void STL_U32(); void STL_U64();
+	void STL_F32(); void STL_F64(); void STL_CHAR(); void STL_BOOL();
+
+	void LDG_I8(); void LDG_I16(); void LDG_I32(); void LDG_I64();
+	void LDG_U8(); void LDG_U16(); void LDG_U32(); void LDG_U64();
+	void LDG_F32(); void LDG_F64(); void LDG_CHAR(); void LDG_BOOL();
+
+	void STG_I8(); void STG_I16(); void STG_I32(); void STG_I64();
+	void STG_U8(); void STG_U16(); void STG_U32(); void STG_U64();
+	void STG_F32(); void STG_F64(); void STG_CHAR(); void STG_BOOL();
 
 	void JMP(); void JMP_IF_FALSE(); void JMP_IF_TRUE(); void CALL(); 
 	void RET(); void DUP();

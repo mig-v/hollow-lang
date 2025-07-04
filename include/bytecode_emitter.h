@@ -6,15 +6,28 @@
 
 struct JumpLabel
 {
-	uint16_t jumpAddress = 0;
-	std::vector<uint16_t> jumpPatches;
+	uint16_t jumpAddress = 0;			// target jump location
+	std::vector<uint16_t> jumpPatches;	// vector of addresses that need to be patched to jump to the labels 'jumpAddress'
 };
 
+// used to track conditional contexts as a whole like the whole condition of if, while, for expressions
+// if ({ConditionContext tracker})
 struct ConditionContext
 {
-	JumpLabel falseBranch;	// where to jump to if condition is false
-	JumpLabel trueBranch;	// where to jump to if condition is true
-	JumpLabel end;			// end of condition construct, instruction immediately after while loop, if statement, etc.
+	JumpLabel falseJump;	// where to jump to if condition is false
+	JumpLabel trueJump;	    // where to jump to if condition is true
+	JumpLabel end;		    // end of condition construct, instruction immediately after while loop, if statement, etc.
+};
+
+// used to track each individual logical component of a condition, so if ((A && B) || (C && D)) -> ({LogicalContext} || {LogicalContext})
+// this is because in nested expressions, the logical expressions need to jump to evaluating the next expression in the condition
+// not jump to the actual true / false branch of a condition. That is up to the ConditionContext to handle
+struct LogicalContext
+{
+	JumpLabel trueJump;
+	JumpLabel falseJump;
+	uint16_t endAddress = 0;
+	uint16_t startAddress = 0;
 };
 
 struct DeferredCall
@@ -70,11 +83,17 @@ private:
 	void resolveDeferredCall(DeferredCall& deferredCall);
 	void emitCallToMain();
 
+	void emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget);
+	void emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget);
+	void patchLabel(JumpLabel& label);
+	bool tryOverwriteLastJump(Opcode newJump);
+
 	Opcode getTypeSpecificAddOpcode(TypeKind type);
 	Opcode getTypeSpecificSubOpcode(TypeKind type);
 	Opcode getTypeSpecificMulOpcode(TypeKind type);
 	Opcode getTypeSpecificDivOpcode(TypeKind type);
-	Opcode getTypeSpecificStoreOpcode(TypeKind type);
+	Opcode getTypeSpecificStoreLocalOpcode(TypeKind type);
+	Opcode getTypeSpecificStoreGlobalOpcode(TypeKind type);
 	Opcode getTypeSpecificNegOpcode(TypeKind type);
 	Opcode getTypeSpecificNotOpcode(TypeKind type);
 	Opcode getTypeSpecificAndOpcode(TypeKind type);
@@ -88,10 +107,10 @@ private:
 	Opcode getTypeSpecificGteOpcode(TypeKind type);
 	Opcode getTypeSpecificLtOpcode(TypeKind type);
 	Opcode getTypeSpecificLteOpcode(TypeKind type);
-	Opcode getTypeSpecificLoadOpcode(TypeKind type);
+	Opcode getTypeSpecificLoadLocalOpcode(TypeKind type);
+	Opcode getTypeSpecificLoadGlobalOpcode(TypeKind type);
 	Opcode getTypeSpecificIncOpcode(TypeKind type);
 	Opcode getTypeSpecificDecOpcode(TypeKind type);
-
 
 	TypeInfo* implicitCastCtx;
 	VMFunctionTable functionTable;

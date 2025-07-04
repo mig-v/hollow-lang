@@ -1,34 +1,23 @@
 
 
-//y : i32 = sub(10, 3);
-//x : i32 = add(square(10), sub(square(5), square(4))); // add(100, sub(25, 16)) -> add(100, 9) -> 109
-
-x: i32 = 5;
-func foo() : i32 
-{
-    y: i32 = 10;
-    
-    {
-        z: i32 = 20;
-    }
-}
-
-func square(x : i32) : i32
-{
-    return x * x;
-}
-
-func add(x : i32, y : i32) : i32
-{
-    return x + y;
-}
-
-func sub(x : i32, y : i32) : i32
-{
-    return x - y;
-}
-
 func main() : i32
 {
-    //return x + y;
+    if ((true || false) && (false || false))
+    {
+        1;
+    }
+    else
+    {
+        2;
+        if ((true || false) && true)
+        {
+            3;
+        }
+        else
+        {
+            4;
+        }
+    }
+
+    return 10;
 }

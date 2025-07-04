@@ -61,8 +61,9 @@ void SymbolResolution::visitFuncDecl(ASTFuncDecl& node)
 
 	node.body->createScope = false;
 	visitBlock(*node.body);
-	functionCtx = nullptr;
 
+	functionCtx = nullptr;
+	node.typeInfo->localsCount = static_cast<uint32_t>(funcScope->getSlotOffset());
 	env->popScope();
 }
 
@@ -71,7 +72,6 @@ void SymbolResolution::visitVarDecl(ASTVarDecl& node)
 	SymbolTable* table = env->getCurrentScope();
 	std::string& identifier = std::get<std::string>(node.varIdentifier.value);
 	node.typeInfo = typeArena.alloc<TypeInfo>();
-
 
 	// error, defining a variable that is already defined
 	if (table->isDefined(identifier))
@@ -231,7 +231,7 @@ void SymbolResolution::visitBlock(ASTBlock& node)
 	for (ASTStmt* stmt : node.statements)
 		stmt->accept(*this);
 
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
 	if (node.createScope)
 		env->popScope();
 }
@@ -255,6 +255,6 @@ void SymbolResolution::visitForLoop(ASTForLoop& node)
 	node.body->createScope = false;
 	visitBlock(*node.body);
 
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
 	env->popScope();
 }

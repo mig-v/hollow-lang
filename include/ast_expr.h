@@ -6,6 +6,11 @@ class ASTExpr : public ASTNode
 {
 public:
 	TypeInfo* typeInfo;
+
+	// defeats the purpose of inheritance + dispatch calls, but I need to know what types of nodes some expressions are
+	// while doing things, so these are going here to avoid dynamic casts
+	bool shortCircuitable;
+	bool isGroupExpr;
 };
 
 class ASTIntLiteral : public ASTExpr
@@ -83,6 +88,7 @@ public:
 	Token op;
 	ASTExpr* value;
 
+	int scope;
 	int slotIndex;
 };
 
@@ -125,7 +131,10 @@ public:
 
 	Token op;
 	ASTExpr* expr;
-	int slotIndex;	// only applicable when the UnaryExpr is something like ++x or --x
+
+	// only applicable when the UnaryExpr is something like ++x or --x
+	int slotIndex;	
+	int scope;
 };
 
 class ASTCall : public ASTExpr
@@ -168,6 +177,7 @@ public:
 	// will need to add more when array access is a thing, and pointers, structs, etc. 
 	// This field can prob just become an LValue struct from l_value.h
 	int slotIndex;
+	int scope;
 };
 
 class ASTArgument : public ASTExpr

@@ -29,6 +29,7 @@ struct TypeInfo
 	// function data
 	std::vector<TypeInfo*> paramTypes;
 	TypeInfo* returnType;
+	uint32_t localsCount;
 };
 
 struct StructMember

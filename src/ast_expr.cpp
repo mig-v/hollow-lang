@@ -10,6 +10,8 @@ ASTIntLiteral::ASTIntLiteral(uint64_t value)
 {
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTIntLiteral::operator==(const ASTNode& other) const
@@ -34,6 +36,8 @@ ASTDoubleLiteral::ASTDoubleLiteral(double value)
 {
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTDoubleLiteral::operator==(const ASTNode& other) const
@@ -60,6 +64,8 @@ ASTCharLiteral::ASTCharLiteral(char value)
 {
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTCharLiteral::operator==(const ASTNode& other) const
@@ -84,6 +90,8 @@ ASTBoolLiteral::ASTBoolLiteral(bool value)
 {
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTBoolLiteral::operator==(const ASTNode& other) const
@@ -110,6 +118,8 @@ ASTIdentifier::ASTIdentifier(Token identifier)
 	this->typeInfo = nullptr;
 	this->scope = 0;
 	this->slotIndex = 0;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTIdentifier::operator==(const ASTNode& other) const
@@ -137,6 +147,9 @@ ASTAssign::ASTAssign(ASTExpr* assignee, Token op, ASTExpr* value)
 	this->value = value;
 	this->typeInfo = nullptr;
 	this->slotIndex = 0;
+	this->scope = 0;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTAssign::operator==(const ASTNode& other) const
@@ -167,6 +180,8 @@ ASTLogical::ASTLogical(ASTExpr* lhs, Token logicalOperator, ASTExpr* rhs)
 	this->logicalOperator = logicalOperator;
 	this->rhs = rhs;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = true;
+	this->isGroupExpr = false;
 }
 
 bool ASTLogical::operator==(const ASTNode& other) const
@@ -197,6 +212,8 @@ ASTBinaryExpr::ASTBinaryExpr(ASTExpr* lhs, Token op, ASTExpr* rhs)
 	this->op = op;
 	this->rhs = rhs;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTBinaryExpr::operator==(const ASTNode& other) const
@@ -227,6 +244,9 @@ ASTUnaryExpr::ASTUnaryExpr(Token op, ASTExpr* expr)
 	this->expr = expr;
 	this->typeInfo = nullptr;
 	this->slotIndex = 0;
+	this->scope = 0;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTUnaryExpr::operator==(const ASTNode& other) const
@@ -255,6 +275,8 @@ ASTCall::ASTCall(ASTExpr* callee, ASTArgList* args)
 	this->callee = callee;
 	this->args = args;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTCall::operator==(const ASTNode& other) const
@@ -282,6 +304,8 @@ ASTGroupExpr::ASTGroupExpr(ASTExpr* expr)
 {
 	this->expr = expr;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = true;
 }
 
 bool ASTGroupExpr::operator==(const ASTNode& other) const
@@ -308,6 +332,9 @@ ASTPostfix::ASTPostfix(ASTExpr* expr, Token op)
 	this->op = op;
 	this->typeInfo = nullptr;
 	this->slotIndex = 0;
+	this->scope = 0;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTPostfix::operator==(const ASTNode& other) const
@@ -335,6 +362,8 @@ ASTArgument::ASTArgument(ASTExpr* value)
 {
 	this->value = value;
 	this->typeInfo = nullptr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTArgument::operator==(const ASTNode& other) const
@@ -358,6 +387,8 @@ void ASTArgument::accept(ASTVisitor& visitor)
 ASTCast::ASTCast(ASTExpr* expr)
 {
 	this->expr = expr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
 }
 
 bool ASTCast::operator==(const ASTNode& other) const

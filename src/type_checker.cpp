@@ -75,6 +75,7 @@ LValue TypeChecker::isLValue(ASTExpr* expr)
 	{
 		lValue.kind = LValueKind::Slot;
 		lValue.slotIndex = var->slotIndex;
+		lValue.scope = var->scope;
 	}
 
 	return lValue;
@@ -338,6 +339,14 @@ void TypeChecker::visitUnaryExpr(ASTUnaryExpr& node)
 {
 	node.expr->accept(*this);
 	
+	LValue lValue = isLValue(node.expr);
+
+	if (lValue.kind == LValueKind::Slot)
+	{
+		node.slotIndex = lValue.slotIndex;
+		node.scope = lValue.scope;
+	}
+
 	// '!' is only defined for bool types
 	if (node.op.type == TokenType::LogicalNot)
 	{
@@ -354,25 +363,22 @@ void TypeChecker::visitUnaryExpr(ASTUnaryExpr& node)
 	//infix '++', '--', '~' is only defined for integer or unsigned integer types
 	else if (node.op.type == TokenType::Increment || node.op.type == TokenType::Decrement)
 	{
-		LValue lValue = isLValue(node.expr);
+		
 		if (lValue.kind == LValueKind::Invalid)
 		{
-			diagnosticReporter->reportDiagnostic("postfix operand must be modifiable l-value", DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
+			diagnosticReporter->reportDiagnostic("prefix operand must be modifiable l-value", DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
 			node.typeInfo->type = TypeKind::Unknown;
 			return;
 		}
 		else if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
 		{
-			std::string message = "postfix ";
+			std::string message = "prefix ";
 			message += DebugUtils::tokenTypeToString(node.op);
 			message += " can only be applied to unsigned or signed integers";
 			diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
 			node.typeInfo->type = TypeKind::Unknown;
 			return;
 		}
-
-		if (lValue.kind == LValueKind::Slot)
-			node.slotIndex = lValue.slotIndex;
 
 		node.typeInfo->type = node.expr->typeInfo->type;
 	}
@@ -454,7 +460,10 @@ void TypeChecker::visitPostfix(ASTPostfix& node)
 		}
 
 		if (lValue.kind == LValueKind::Slot)
+		{
 			node.slotIndex = lValue.slotIndex;
+			node.scope = lValue.scope;
+		}
 		
 		node.typeInfo->type = node.expr->typeInfo->type;
 	}

@@ -16,31 +16,31 @@ OpcodeData::OpcodeData()
 	opcodeData[static_cast<size_t>(Opcode::PUSH_CHAR)] = { 1, { OperandData{1, OperandType::Char}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 	opcodeData[static_cast<size_t>(Opcode::PUSH_BOOL)] = { 1, { OperandData{1, OperandType::Bool}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 
-	opcodeData[static_cast<size_t>(Opcode::LOAD_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::LOAD_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDL_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 
-	opcodeData[static_cast<size_t>(Opcode::STORE_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
-	opcodeData[static_cast<size_t>(Opcode::STORE_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STL_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 
 	opcodeData[static_cast<size_t>(Opcode::JMP)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 	opcodeData[static_cast<size_t>(Opcode::JMP_IF_FALSE)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
@@ -262,4 +262,29 @@ OpcodeData::OpcodeData()
 	opcodeData[static_cast<size_t>(Opcode::DEC_U32)] = { 0, { OperandData{0, OperandType::None}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 	opcodeData[static_cast<size_t>(Opcode::DEC_U64)] = { 0, { OperandData{0, OperandType::None}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 
+	opcodeData[static_cast<size_t>(Opcode::LDG_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::LDG_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+
+	opcodeData[static_cast<size_t>(Opcode::STG_I8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_I16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_I32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_I64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_U8)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_U16)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_U32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_U64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_F32)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_F64)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_CHAR)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
+	opcodeData[static_cast<size_t>(Opcode::STG_BOOL)] = { 1, { OperandData{2, OperandType::U16}, OperandData{0, OperandType::None}, OperandData{0, OperandType::None}} };
 }

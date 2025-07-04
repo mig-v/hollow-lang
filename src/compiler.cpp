@@ -64,7 +64,7 @@ void Compiler::compile(const std::string& file)
 		return;
 
 	bytecodeEmitter->generateBytecode(parser->getAst());
-	//parser->printAST();
+	parser->printAST();
 	bytecodeDisassembler->setBytecode(bytecodeEmitter->getBytecode());
 	bytecodeDisassembler->disassemble();
 	vm->execute(bytecodeEmitter->getBytecode(), bytecodeEmitter->getFunctionTable(), globalVarCount);

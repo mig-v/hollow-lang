@@ -1,4 +1,5 @@
 #include "bytecode_emitter.h"
+#include "ast_utils.h"
 
 #include <iostream>
 
@@ -146,6 +147,134 @@ void BytecodeEmitter::resolveDeferredCall(DeferredCall& deferredCall)
 	insert8(function->argCount, deferredCall.callAddress + 2);
 }
 
+void BytecodeEmitter::patchLabel(JumpLabel& label)
+{
+	for (size_t i = 0; i < label.jumpPatches.size(); i++)
+		insert16(label.jumpAddress, label.jumpPatches[i]);
+}
+
+bool BytecodeEmitter::tryOverwriteLastJump(Opcode newJump)
+{
+	// 2 bytes 2 bytes  curr
+	// JMP = [bytecode.size() - 4, bytecode.size() - 3], ADDRESS = [bytecode.size() - 2, bytecode.size() - 1]
+	// [JMP,   ADDRESS, PC]
+
+	// make sure there's enough bytecode, if not, return false
+	if (bytecode.size() < 4)
+		return false;
+
+	// extract the low and high bits of the opcode and cast it to the Opcode enum
+	uint8_t opcodeLow = bytecode[bytecode.size() - 4];
+	uint8_t opcodeHigh = bytecode[bytecode.size() - 3];
+	uint16_t combined = (static_cast<uint16_t>(opcodeHigh) << 8) | static_cast<uint16_t>(opcodeLow);
+	Opcode opcode = static_cast<Opcode>(combined);
+
+	// if opcode is not a JMP instruction, don't overwrite
+	if (opcode != Opcode::JMP_IF_FALSE && opcode != Opcode::JMP_IF_TRUE)
+		return false;
+
+	// at this point, we know its a jmp instruction, so overwrite it and patch a jump in at the next two bytes after the JMP instruction
+	insert16(static_cast<uint16_t>(newJump), bytecode.size() - 4);
+	conditionCtxStack.back().falseJump.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size() - 2));
+	return true;
+}
+
+void BytecodeEmitter::emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget)
+{
+	JumpLabel rhsLabel;
+
+	// if lhs is ASTLogical node
+	ASTExpr* lhs = ASTUtils::unwrapGroupExpr(node.lhs);
+	if (lhs->shortCircuitable)
+	{
+		ASTLogical& lhsExpr = static_cast<ASTLogical&>(*lhs);
+
+		if (lhsExpr.logicalOperator.type == TokenType::LogicalOr)
+			emitShortCircuitOr(lhsExpr, trueTarget, &rhsLabel);
+		else
+			emitShortCircuitAnd(lhsExpr, &rhsLabel, falseTarget);
+	}
+	else
+	{
+		node.lhs->accept(*this);
+
+		emit(Opcode::JMP_IF_TRUE);
+		trueTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
+
+	rhsLabel.jumpAddress = (static_cast<uint16_t>(bytecode.size()));
+	patchLabel(rhsLabel);
+
+	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
+	if (rhs->shortCircuitable)
+	{
+		ASTLogical& rhsExpr = static_cast<ASTLogical&>(*rhs);
+
+		if (rhsExpr.logicalOperator.type == TokenType::LogicalOr)
+			emitShortCircuitOr(rhsExpr, trueTarget, falseTarget);
+		else
+			emitShortCircuitAnd(rhsExpr, &rhsLabel, falseTarget);
+	}
+		
+	else
+	{
+		node.rhs->accept(*this);
+
+		emit(Opcode::JMP_IF_TRUE);
+		trueTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
+}
+
+void BytecodeEmitter::emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget)
+{
+	JumpLabel rhsLabel;
+
+	// if lhs is ASTLogical node
+	ASTExpr* lhs = ASTUtils::unwrapGroupExpr(node.lhs);
+	if (lhs->shortCircuitable)
+	{
+		ASTLogical& lhsExpr = static_cast<ASTLogical&>(*lhs);
+
+		if (lhsExpr.logicalOperator.type == TokenType::LogicalOr)
+			emitShortCircuitOr(lhsExpr, &rhsLabel, falseTarget);
+		else
+			emitShortCircuitAnd(lhsExpr, &rhsLabel, falseTarget);
+	}
+	else
+	{
+		node.lhs->accept(*this);
+
+		emit(Opcode::JMP_IF_FALSE);
+		rhsLabel.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
+
+	rhsLabel.jumpAddress = (static_cast<uint16_t>(bytecode.size()));
+	patchLabel(rhsLabel);
+
+	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
+	if (rhs->shortCircuitable)
+	{
+		ASTLogical& rhsExpr = static_cast<ASTLogical&>(*rhs);
+
+		if (rhsExpr.logicalOperator.type == TokenType::LogicalOr)
+			emitShortCircuitOr(rhsExpr, trueTarget, falseTarget);
+		else
+			emitShortCircuitAnd(rhsExpr, trueTarget, falseTarget);
+	}
+
+	else
+	{
+		node.rhs->accept(*this);
+
+		emit(Opcode::JMP_IF_FALSE);
+		falseTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
+}
+
 Opcode BytecodeEmitter::getTypeSpecificAddOpcode(TypeKind type)
 {
 	switch (type)
@@ -214,22 +343,41 @@ Opcode BytecodeEmitter::getTypeSpecificDivOpcode(TypeKind type)
 	}
 }
 
-Opcode BytecodeEmitter::getTypeSpecificStoreOpcode(TypeKind type)
+Opcode BytecodeEmitter::getTypeSpecificStoreLocalOpcode(TypeKind type)
 {
 	switch (type)
 	{
-		case TypeKind::i8:   return Opcode::STORE_I8;
-		case TypeKind::i16:  return Opcode::STORE_I16;
-		case TypeKind::i32:  return Opcode::STORE_I32;
-		case TypeKind::i64:  return Opcode::STORE_I64;
-		case TypeKind::u8:   return Opcode::STORE_U8;
-		case TypeKind::u16:  return Opcode::STORE_U16;
-		case TypeKind::u32:  return Opcode::STORE_U32;
-		case TypeKind::u64:  return Opcode::STORE_U64;
-		case TypeKind::f32:  return Opcode::STORE_F32;
-		case TypeKind::f64:  return Opcode::STORE_F64;
-		case TypeKind::Char: return Opcode::STORE_CHAR;
-		case TypeKind::Bool: return Opcode::STORE_BOOL;
+		case TypeKind::i8:   return Opcode::STL_I8;
+		case TypeKind::i16:  return Opcode::STL_I16;
+		case TypeKind::i32:  return Opcode::STL_I32;
+		case TypeKind::i64:  return Opcode::STL_I64;
+		case TypeKind::u8:   return Opcode::STL_U8;
+		case TypeKind::u16:  return Opcode::STL_U16;
+		case TypeKind::u32:  return Opcode::STL_U32;
+		case TypeKind::u64:  return Opcode::STL_U64;
+		case TypeKind::f32:  return Opcode::STL_F32;
+		case TypeKind::f64:  return Opcode::STL_F64;
+		case TypeKind::Char: return Opcode::STL_CHAR;
+		case TypeKind::Bool: return Opcode::STL_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificStoreGlobalOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::STG_I8;
+		case TypeKind::i16:  return Opcode::STG_I16;
+		case TypeKind::i32:  return Opcode::STG_I32;
+		case TypeKind::i64:  return Opcode::STG_I64;
+		case TypeKind::u8:   return Opcode::STG_U8;
+		case TypeKind::u16:  return Opcode::STG_U16;
+		case TypeKind::u32:  return Opcode::STG_U32;
+		case TypeKind::u64:  return Opcode::STG_U64;
+		case TypeKind::f32:  return Opcode::STG_F32;
+		case TypeKind::f64:  return Opcode::STG_F64;
+		case TypeKind::Char: return Opcode::STG_CHAR;
+		case TypeKind::Bool: return Opcode::STG_BOOL;
 	}
 }
 
@@ -446,22 +594,41 @@ Opcode BytecodeEmitter::getTypeSpecificLteOpcode(TypeKind type)
 	}
 }
 
-Opcode BytecodeEmitter::getTypeSpecificLoadOpcode(TypeKind type)
+Opcode BytecodeEmitter::getTypeSpecificLoadLocalOpcode(TypeKind type)
 {
 	switch (type)
 	{
-		case TypeKind::i8:   return Opcode::LOAD_I8;
-		case TypeKind::i16:  return Opcode::LOAD_I16;
-		case TypeKind::i32:  return Opcode::LOAD_I32;
-		case TypeKind::i64:  return Opcode::LOAD_I64;
-		case TypeKind::u8:   return Opcode::LOAD_U8;
-		case TypeKind::u16:  return Opcode::LOAD_U16;
-		case TypeKind::u32:  return Opcode::LOAD_U32;
-		case TypeKind::u64:  return Opcode::LOAD_U64;
-		case TypeKind::f32:  return Opcode::LOAD_F32;
-		case TypeKind::f64:  return Opcode::LOAD_F64;
-		case TypeKind::Char: return Opcode::LOAD_CHAR;
-		case TypeKind::Bool: return Opcode::LOAD_BOOL;
+		case TypeKind::i8:   return Opcode::LDL_I8;
+		case TypeKind::i16:  return Opcode::LDL_I16;
+		case TypeKind::i32:  return Opcode::LDL_I32;
+		case TypeKind::i64:  return Opcode::LDL_I64;
+		case TypeKind::u8:   return Opcode::LDL_U8;
+		case TypeKind::u16:  return Opcode::LDL_U16;
+		case TypeKind::u32:  return Opcode::LDL_U32;
+		case TypeKind::u64:  return Opcode::LDL_U64;
+		case TypeKind::f32:  return Opcode::LDL_F32;
+		case TypeKind::f64:  return Opcode::LDL_F64;
+		case TypeKind::Char: return Opcode::LDL_CHAR;
+		case TypeKind::Bool: return Opcode::LDL_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificLoadGlobalOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::LDG_I8;
+		case TypeKind::i16:  return Opcode::LDG_I16;
+		case TypeKind::i32:  return Opcode::LDG_I32;
+		case TypeKind::i64:  return Opcode::LDG_I64;
+		case TypeKind::u8:   return Opcode::LDG_U8;
+		case TypeKind::u16:  return Opcode::LDG_U16;
+		case TypeKind::u32:  return Opcode::LDG_U32;
+		case TypeKind::u64:  return Opcode::LDG_U64;
+		case TypeKind::f32:  return Opcode::LDG_F32;
+		case TypeKind::f64:  return Opcode::LDG_F64;
+		case TypeKind::Char: return Opcode::LDG_CHAR;
+		case TypeKind::Bool: return Opcode::LDG_BOOL;
 	}
 }
 
@@ -623,8 +790,8 @@ void BytecodeEmitter::visitVarDecl(ASTVarDecl& node)
 	else
 		emitDefaultValue(type);
 
-	emit(getTypeSpecificStoreOpcode(type));
-	
+	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+
 	// push the slot index to store the variable in
 	emit16(static_cast<uint16_t>(node.slotIndex));
 }
@@ -636,16 +803,21 @@ void BytecodeEmitter::visitFuncDecl(ASTFuncDecl& node)
 
 	// add function meta data to FunctionTable, startAddress is defaulted to 0 and will later get patched in when iterating over
 	// the deferredFunctions vector
-	functionTable.addFunction(std::get<std::string>(node.funcIdentifier.value), static_cast<uint8_t>(node.params->params.size()), 0);
+	functionTable.addFunction(std::get<std::string>(node.funcIdentifier.value), static_cast<uint8_t>(node.params->params.size()), 0, node.typeInfo->localsCount);
 }
 
 void BytecodeEmitter::visitIdentifier(ASTIdentifier& node)
 {
 	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
-	emit(getTypeSpecificLoadOpcode(type));
+	emit(node.scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
 
 	// push the slot index to store the variable in
 	emit16(static_cast<uint16_t>(node.slotIndex));
+
+	if (node.scope == 0)
+		std::cout << "Emitter loading global variable \"" << node.typeInfo->name << "\"\n";
+	else
+		std::cout << "Emitter loading local variable \"" << node.typeInfo->name << "\"\n";
 }
 
 void BytecodeEmitter::visitExprStmt(ASTExprStmt& node)
@@ -670,7 +842,8 @@ void BytecodeEmitter::visitAssign(ASTAssign& node)
 	// for compound assignment operators, we need to load the variable before pushing the value we're assigning
 	if (node.op.type != TokenType::Assign)
 	{
-		emit(getTypeSpecificLoadOpcode(type));
+		
+		emit(node.scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
 		emit16(static_cast<uint16_t>(node.slotIndex));
 	}
 
@@ -710,7 +883,7 @@ void BytecodeEmitter::visitAssign(ASTAssign& node)
 			break;
 	}
 
-	emit(getTypeSpecificStoreOpcode(type));
+	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
 	emit16(static_cast<uint16_t>(node.slotIndex));
 }
 
@@ -755,7 +928,7 @@ void BytecodeEmitter::visitForLoop(ASTForLoop& node)
 	emit(Opcode::JMP);
 	emit16(startAddress);
 
-	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+	patchLabelJumps(conditionCtxStack.back().falseJump.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	conditionCtxStack.pop_back();
 }
@@ -786,7 +959,7 @@ void BytecodeEmitter::visitWhileLoop(ASTWhileLoop& node)
 	emit16(startAddress);
 
 	// false and end jumps are both jumping to the same place, they're just jumping to the next valid instruction after the while loop
-	patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+	patchLabelJumps(conditionCtxStack.back().falseJump.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
 	conditionCtxStack.pop_back();
 }
@@ -798,26 +971,37 @@ void BytecodeEmitter::visitIfStatement(ASTIfStatement& node)
 	node.condition->accept(*this);
 	shortCircuitCtx = false;
 
-	// patch in label jumps for whatever Label right BEFORE the code for that label should start
-	patchLabelJumps(conditionCtxStack.back().trueBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
-	node.trueBranch->accept(*this);
+	// try to replace the last JMP instruction emitted through short circuiting with a JMP_IF_FALSE to skip the true branch
+	if (!tryOverwriteLastJump(Opcode::JMP_IF_FALSE))
+	{
+		emit(Opcode::JMP_IF_FALSE);
+		conditionCtxStack.back().falseJump.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
 
-	// if there's a false branch, we need to emit a JMP after the true branch to skip over the true branch if the condition is false
+	uint16_t trueBranchAddress = static_cast<uint16_t>(bytecode.size());
+	node.trueBranch->accept(*this);
+	
+	// if there's no false branch, then this is the end of the if statement, so this works as a jump target for JMP_IF_FALSE instructions
+	uint16_t falseBranchAddress = static_cast<uint16_t>(bytecode.size());
+
+	// if there's a false branch, we need an unconditional jump to jump over the false branch in the event that the true branch was taken
 	if (node.falseBranch)
 	{
 		emit(Opcode::JMP);
-		conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		size_t jumpAddress = bytecode.size();
 		emit16(0);
-		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+
+		// if there is a false branch, overwrite the falseBranchAddress value to point to the false branch
+		falseBranchAddress = static_cast<uint16_t>(bytecode.size());
 		node.falseBranch->accept(*this);
-		patchLabelJumps(conditionCtxStack.back().end.jumpPatches, static_cast<uint16_t>(bytecode.size()));
+
+		// manually patch the unconditional jump to skip the false branch
+		insert16(static_cast<uint16_t>(bytecode.size()), jumpAddress);
 	}
 
-	// otherwise, if there's not a false branch, we just need to fill in the patchSites to jump to the end of the if statement
-	else
-	{
-		patchLabelJumps(conditionCtxStack.back().falseBranch.jumpPatches, static_cast<uint16_t>(bytecode.size()));
-	}
+	patchLabelJumps(conditionCtxStack.back().trueJump.jumpPatches, trueBranchAddress);
+	patchLabelJumps(conditionCtxStack.back().falseJump.jumpPatches, falseBranchAddress);
 
 	conditionCtxStack.pop_back();
 }
@@ -828,33 +1012,9 @@ void BytecodeEmitter::visitLogical(ASTLogical& node)
 	if (shortCircuitCtx)
 	{
 		if (node.logicalOperator.type == TokenType::LogicalAnd)
-		{
-			node.lhs->accept(*this);
-			emit(Opcode::JMP_IF_FALSE);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-			emit16(0);	// emit temp jump address, since we dont know where the false branch will be located
-
-			node.rhs->accept(*this);
-			emit(Opcode::JMP_IF_FALSE);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-			emit16(0);
-		}
+			emitShortCircuitAnd(node, &conditionCtxStack.back().trueJump, &conditionCtxStack.back().falseJump);
 		else if (node.logicalOperator.type == TokenType::LogicalOr)
-		{
-			node.lhs->accept(*this);
-			emit(Opcode::JMP_IF_TRUE);
-			conditionCtxStack.back().trueBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-			emit16(0);
-
-			node.rhs->accept(*this);
-			emit(Opcode::JMP_IF_TRUE);
-			conditionCtxStack.back().trueBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-			emit16(0);
-
-			emit(Opcode::JMP);
-			conditionCtxStack.back().falseBranch.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-			emit16(0);
-		}
+			emitShortCircuitOr(node, &conditionCtxStack.back().trueJump, &conditionCtxStack.back().falseJump);
 	}
 
 	// otherwise, no short circuiting behavior is necessary, just push the two operands, then the corresponding logical instruction
@@ -872,6 +1032,7 @@ void BytecodeEmitter::visitLogical(ASTLogical& node)
 
 void BytecodeEmitter::visitBinaryExpr(ASTBinaryExpr& node)
 {
+	std::cout << "Emitting binary expr, shortCircuitCtx = " << shortCircuitCtx << std::endl;
 	node.lhs->accept(*this);
 	node.rhs->accept(*this);
 
@@ -909,6 +1070,29 @@ void BytecodeEmitter::visitBinaryExpr(ASTBinaryExpr& node)
 
 		// For comparison operations, the binary expr node is ALWAYS set to Bool type, so we need to get the type
 		// from one of the sub expressions. They should match because of the type checking phase, so we can take either one
+
+			/*
+			
+			need to check if in condition context, can use the ConditionCtxStack for this, for comparison operations,
+			if in a condition context, push the normal GT, LT, NEQ, etc. instruction, but also emit JMP_IF_FALSE instructions
+			and patch it in with the conditionCtx.back().patch.... like how im doing in visitLogical.
+			Maybe even refactor this into a function specific to this like doComparisonInCondition, doLogicalInCondition, etc 
+			to make things more clean. MIGHT even need to do this in pure visitBoolLiteral, need to test with different source files
+
+			test with:
+			if (true) {} else {}
+			
+			if (true || false) {} else {}
+
+			if (true && false) {} else {}
+
+			if ((true && false) || true) {} else {}
+
+			if (10 > 100) {} else {}
+
+			if ((true) || (10 > 100)) {} else {}
+
+			*/
 		case TokenType::NotEq:
 			emit(getTypeSpecificNeqOpcode(node.lhs->typeInfo->type));
 			break;
@@ -946,19 +1130,18 @@ void BytecodeEmitter::visitUnaryExpr(ASTUnaryExpr& node)
 	// !x, -x, or ~x
 	// LOAD  -> [..., x]
 	// NOT   -> [..., !x]
-
 	switch (node.op.type)
 	{
 		case TokenType::Increment:
 			emit(getTypeSpecificIncOpcode(type));
 			emit(Opcode::DUP);
-			emit(getTypeSpecificStoreOpcode(type));
+			emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
 			emit16(static_cast<uint16_t>(node.slotIndex));
 			break;
 		case TokenType::Decrement:
 			emit(getTypeSpecificDecOpcode(type));
 			emit(Opcode::DUP);
-			emit(getTypeSpecificStoreOpcode(type));
+			emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
 			emit16(static_cast<uint16_t>(node.slotIndex));
 			break;
 		case TokenType::LogicalNot:
@@ -1033,7 +1216,7 @@ void BytecodeEmitter::visitPostfix(ASTPostfix& node)
 	}
 
 	// have to output store instruction AND the variables slot, forgetting to emit the slot was the cause of a nasty bug
-	emit(getTypeSpecificStoreOpcode(type));
+	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
 	emit16(static_cast<uint16_t>(node.slotIndex));
 }
 

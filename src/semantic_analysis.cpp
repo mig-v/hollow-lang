@@ -121,7 +121,7 @@ void SemanticAnalysis::visitFuncDecl(ASTFuncDecl& node)
 	
 	// after visiting param list / body / whatever other functionCtx related information, reset the ctx back to nullptr
 	functionCtxStack.pop_back();
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
 	env->popScope();
 }
 
@@ -172,6 +172,7 @@ void SemanticAnalysis::visitAssign(ASTAssign& node)
 	node.value->accept(*this);
 	node.typeInfo = symbol->typeInfo;
 	node.slotIndex = symbol->slotIndex;
+	node.scope = symbol->scope;
 }
 
 void SemanticAnalysis::visitReturn(ASTReturn& node)
@@ -196,7 +197,7 @@ void SemanticAnalysis::visitBlock(ASTBlock& node)
 	for (ASTStmt* stmt : node.statements)
 		stmt->accept(*this);
 
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
 	if (node.createScope)
 		env->popScope();
 }
@@ -217,7 +218,7 @@ void SemanticAnalysis::visitForLoop(ASTForLoop& node)
 	node.body->createScope = false;
 	visitBlock(*node.body);
 
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
 	env->popScope();
 }
 

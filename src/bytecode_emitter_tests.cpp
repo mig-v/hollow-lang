@@ -15,8 +15,8 @@ BytecodeEmitterTests::BytecodeEmitterTests()
 	typeArena = new MemoryArena;
 	reporter = new DiagnosticReporter;
 
-	testSuite[TEST_PATH"/parser_tests/literals_test.hollow"].testname = "short_circuit_test.hollow";
-	testSuite[TEST_PATH"/parser_tests/literals_test.hollow"].expectedBytecode =
+	testSuite[TEST_PATH"/bytecode_emitter_tests/short_circuit_test.hollow"].testname = "short_circuit_test.hollow";
+	testSuite[TEST_PATH"/bytecode_emitter_tests/short_circuit_test.hollow"].expectedBytecode =
 	{
 		0x33, 0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x0b, 0x00, 0x01, 0x32, 0x00, 0x15, 0x00, 0x0b,
 		0x00, 0x00, 0x31, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x0a, 0x30, 0x00, 0x1f, 0x00, 0x00, 0x00,

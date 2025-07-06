@@ -16,7 +16,6 @@ void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 	for (ASTNode* node : ast)
 		node->accept(*this);
 
-
 	// emit a call to main followed by a HALT instruction after top level code. Everything below this point are functions, which should not
 	// be executed directly they must be executed via a CALL instruction
 	// bytecode layout looks like -> [Top level statements ... ] -> [call main] -> [HALT] -> [function declarations]

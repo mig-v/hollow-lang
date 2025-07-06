@@ -1,0 +1,81 @@
+func main() : i32
+{
+
+    // should short circuit, skip evaling false and output 10
+    if (true || false) {10;}
+    else {20;}
+
+    // needs to eval both, but should output 10
+    if (false || true) {10;}
+    else {20;}
+
+    // needs to eval both, but should output 20;
+    if (true && false) {10;}
+    else {20;}
+
+    // should short circuit, skip evaling true and output 20
+    if (false && true) {10;}
+    else {20;}
+
+    // && chain, should output 10
+    if (true && true && true) {10;}
+    else {20;}
+
+    // && chain, should short circuit on first false eval and output 20
+    if (false && true && true) {10;}
+    else {20;}
+
+    // && chain, should short circuit when it sees false and output 20
+    if (true && false && true) {10;}
+    else {20;}
+
+    // || chain, should output 20
+    if (false || false || false) {10;}
+    else {20;}
+
+    // should see true and short circuit and output 10
+    if (true || (false && false)) {10;}
+    else {20;}
+
+    // needs to eval all, but should output 20
+    if ((false || true) && false) {10;}
+    else {20;}
+
+    // should short circuit when it sees the first false and output 20
+    if (false && (true || false)) {10;}
+    else {20;}
+
+    // evals whole LHS expression, but short circuits and skips entire RHS expression, outputs 20
+    if ((true && false) && (true || false)) {10;}
+    else {20;}
+
+    // should short circuit LHS sub expression, jump to RHS sub expression, eval both, and output 10
+    if ((false && true) || (false || true)) {10;}
+    else {20;}
+
+    // deep nesting, should short circuit fast and output 20
+    if ((false && false) || (false && (true || false))) {10;}
+    else {20;}
+
+    // deep nesting, short circuits and skips all false evals, evals all 3 trues and outputs 10
+    if ((true || false) && (true && (true || false))) {10;}
+    else {20;}
+
+    // deep nesting, needs to eval everything and outputs 10
+    if ((false || false) || (false || true)) {10;}
+    else {20;}
+
+    // paranoia test, make sure im unwrapping grouped expressions, should output 20
+    if (((true)) && (((false)))) {10;}
+    else {20;}
+
+    // eval all and output 10
+    if ((false || true) && (false || true)) {10;}
+    else {20;}
+
+    // eval whole LHS sub expression then short circuit and output 20
+    if ((false || false) && (true || false)) {10;}
+    else {20;}
+
+    return 0;
+}

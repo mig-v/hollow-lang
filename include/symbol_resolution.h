@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ast_visitor.h"
 #include "environment.h"
 #include "memory_arena.h"

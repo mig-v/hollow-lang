@@ -2,6 +2,7 @@
 #include "ast_utils.h"
 
 #include <iostream>
+#include <iomanip>
 
 BytecodeEmitter::BytecodeEmitter()
 {
@@ -30,6 +31,25 @@ void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 		resolveDeferredCall(call);
 
 	functionTable.dumpTable();
+}
+
+void BytecodeEmitter::rawDumpBytecode()
+{
+	const int BYTES_PER_LINE = 15;
+	int count = 0;
+	for (uint8_t byte : bytecode)
+	{
+		if (count == BYTES_PER_LINE)
+		{
+			std::cout << "\n";
+			count = 0;
+		}
+
+		std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<uint32_t>(byte) << ", ";
+		count++;
+	}
+
+	std::cout << std::dec << std::endl;
 }
 
 void BytecodeEmitter::emitCallToMain()
@@ -153,16 +173,8 @@ void BytecodeEmitter::patchLabel(JumpLabel& label)
 		insert16(label.jumpAddress, label.jumpPatches[i]);
 }
 
-bool BytecodeEmitter::tryOverwriteLastJump(Opcode newJump)
+bool BytecodeEmitter::lastInstructionWasConditionalJmp()
 {
-	// 2 bytes 2 bytes  curr
-	// JMP = [bytecode.size() - 4, bytecode.size() - 3], ADDRESS = [bytecode.size() - 2, bytecode.size() - 1]
-	// [JMP,   ADDRESS, PC]
-
-	// make sure there's enough bytecode, if not, return false
-	if (bytecode.size() < 4)
-		return false;
-
 	// extract the low and high bits of the opcode and cast it to the Opcode enum
 	uint8_t opcodeLow = bytecode[bytecode.size() - 4];
 	uint8_t opcodeHigh = bytecode[bytecode.size() - 3];
@@ -171,6 +183,19 @@ bool BytecodeEmitter::tryOverwriteLastJump(Opcode newJump)
 
 	// if opcode is not a JMP instruction, don't overwrite
 	if (opcode != Opcode::JMP_IF_FALSE && opcode != Opcode::JMP_IF_TRUE)
+		return false;
+}
+
+bool BytecodeEmitter::tryOverwriteLastJump(Opcode newJump)
+{
+	// 2 bytes 2 bytes  curr
+	// JMP = [bytecode.size() - 4, bytecode.size() - 3], ADDRESS = [bytecode.size() - 2, bytecode.size() - 1]
+	// [JMP,   ADDRESS, PC]
+	// make sure there's enough bytecode, if not, return false
+	if (bytecode.size() < 4)
+		return false;
+
+	if (!lastInstructionWasConditionalJmp())
 		return false;
 
 	// at this point, we know its a jmp instruction, so overwrite it and patch a jump in at the next two bytes after the JMP instruction
@@ -183,8 +208,16 @@ void BytecodeEmitter::emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget
 {
 	JumpLabel rhsLabel;
 
-	// if lhs is ASTLogical node
+	// unwrap both lhs and rhs
 	ASTExpr* lhs = ASTUtils::unwrapGroupExpr(node.lhs);
+	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
+
+	// we know we're in a short circuiting or expression so there are three cases:
+	// ((A || B) || (C || D)) -> rhs is short circuitable
+	// ((A || B) || (C && D)) -> rhs is short circuitable
+	// ((A && B) || (C || D)) -> rhs is short circuitable
+	// ((A && B) || (C || D)) -> rhs is short circuitable
+	// ((A || B) || C)        -> rhs is not short circuitable
 	if (lhs->shortCircuitable)
 	{
 		ASTLogical& lhsExpr = static_cast<ASTLogical&>(*lhs);
@@ -192,7 +225,7 @@ void BytecodeEmitter::emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget
 		if (lhsExpr.logicalOperator.type == TokenType::LogicalOr)
 			emitShortCircuitOr(lhsExpr, trueTarget, &rhsLabel);
 		else
-			emitShortCircuitAnd(lhsExpr, &rhsLabel, falseTarget);
+			emitShortCircuitAnd(lhsExpr, trueTarget, &rhsLabel);
 	}
 	else
 	{
@@ -206,7 +239,6 @@ void BytecodeEmitter::emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget
 	rhsLabel.jumpAddress = (static_cast<uint16_t>(bytecode.size()));
 	patchLabel(rhsLabel);
 
-	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
 	if (rhs->shortCircuitable)
 	{
 		ASTLogical& rhsExpr = static_cast<ASTLogical&>(*rhs);
@@ -214,15 +246,15 @@ void BytecodeEmitter::emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget
 		if (rhsExpr.logicalOperator.type == TokenType::LogicalOr)
 			emitShortCircuitOr(rhsExpr, trueTarget, falseTarget);
 		else
-			emitShortCircuitAnd(rhsExpr, &rhsLabel, falseTarget);
+			emitShortCircuitAnd(rhsExpr, trueTarget, falseTarget);
 	}
 		
 	else
 	{
 		node.rhs->accept(*this);
 
-		emit(Opcode::JMP_IF_TRUE);
-		trueTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit(Opcode::JMP_IF_FALSE);
+		falseTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 		emit16(0);
 	}
 }
@@ -233,6 +265,13 @@ void BytecodeEmitter::emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarge
 
 	// if lhs is ASTLogical node
 	ASTExpr* lhs = ASTUtils::unwrapGroupExpr(node.lhs);
+	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
+
+	// we know we're in a short circuiting and expression so there are four cases:
+	// ((A && B) && (C || D)) -> rhs is short circuitable
+	// ((A && B) && (C && D)) -> rhs is short circuitable
+	// ((A || B) && (C && D)) -> rhs is short circuitable
+	// ((A || B) && C)        -> rhs is not short circuitable
 	if (lhs->shortCircuitable)
 	{
 		ASTLogical& lhsExpr = static_cast<ASTLogical&>(*lhs);
@@ -247,14 +286,13 @@ void BytecodeEmitter::emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarge
 		node.lhs->accept(*this);
 
 		emit(Opcode::JMP_IF_FALSE);
-		rhsLabel.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		falseTarget->jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
 		emit16(0);
 	}
 
 	rhsLabel.jumpAddress = (static_cast<uint16_t>(bytecode.size()));
 	patchLabel(rhsLabel);
 
-	ASTExpr* rhs = ASTUtils::unwrapGroupExpr(node.rhs);
 	if (rhs->shortCircuitable)
 	{
 		ASTLogical& rhsExpr = static_cast<ASTLogical&>(*rhs);
@@ -916,9 +954,16 @@ void BytecodeEmitter::visitForLoop(ASTForLoop& node)
 		shortCircuitCtx = false;
 	}
 	
-	emit(Opcode::JMP_IF_FALSE);
-	conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
-	emit16(0);
+	if (!tryOverwriteLastJump(Opcode::JMP_IF_FALSE))
+	{
+		std::cout << "could not overwrite last jump IN VISIT FOR LOOP\n";
+		emit(Opcode::JMP_IF_FALSE);
+		conditionCtxStack.back().falseJump.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+		emit16(0);
+	}
+	//emit(Opcode::JMP_IF_FALSE);
+	//conditionCtxStack.back().end.jumpPatches.push_back(static_cast<uint16_t>(bytecode.size()));
+	//emit16(0);
 
 	node.body->accept(*this);
 

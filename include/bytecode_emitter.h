@@ -41,6 +41,7 @@ class BytecodeEmitter : public ASTVisitor
 public:
 	BytecodeEmitter();
 	void generateBytecode(std::vector<ASTNode*>& ast);
+	void rawDumpBytecode();
 	std::vector<uint8_t>* getBytecode() { return &bytecode; }
 	VMFunctionTable* getFunctionTable() { return &functionTable; }
 
@@ -87,6 +88,7 @@ private:
 	void emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget);
 	void patchLabel(JumpLabel& label);
 	bool tryOverwriteLastJump(Opcode newJump);
+	bool lastInstructionWasConditionalJmp();
 
 	Opcode getTypeSpecificAddOpcode(TypeKind type);
 	Opcode getTypeSpecificSubOpcode(TypeKind type);

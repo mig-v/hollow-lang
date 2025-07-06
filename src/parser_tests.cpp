@@ -317,5 +317,4 @@ void ParserTests::runSpecific(const std::string & filename)
 		if (logFile.is_open())
 			logFile << testSuite[filename].testname << " ... FAILED" << std::endl << std::endl;
 	}
-
 }

@@ -2,22 +2,9 @@
 
 func main() : i32
 {
-    if ((true || false) && (false || false))
-    {
-        1;
-    }
-    else
-    {
-        2;
-        if ((true || false) && true)
-        {
-            3;
-        }
-        else
-        {
-            4;
-        }
-    }
 
-    return 10;
+   if ((false || false) && (true || false)) {10;}
+    else {20;}
+
+    return 0;
 }

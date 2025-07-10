@@ -24,6 +24,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::i8, TypeKind::Function, ConversionType::NotAllowed, "cannot convert i8 to function");
 	addConversion(TypeKind::i8, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert i8 to struct");
 	addConversion(TypeKind::i8, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert i8 to unknown");
+	addConversion(TypeKind::i8, TypeKind::Array, ConversionType::NotAllowed, "cannot convert i8 to array");
 
 	// i16 conversions
 	addConversion(TypeKind::i16, TypeKind::i8, ConversionType::Narrowing, "narrowing i16 to i8");
@@ -45,6 +46,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::i16, TypeKind::Function, ConversionType::NotAllowed, "cannot convert i16 to function");
 	addConversion(TypeKind::i16, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert i16 to struct");
 	addConversion(TypeKind::i16, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert i16 to unknown");
+	addConversion(TypeKind::i16, TypeKind::Array, ConversionType::NotAllowed, "cannot convert i16 to array");
 
 	// i32 conversions
 	addConversion(TypeKind::i32, TypeKind::i8, ConversionType::Narrowing, "narrowing i32 to i8");
@@ -66,7 +68,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::i32, TypeKind::Function, ConversionType::NotAllowed, "cannot convert i32 to function");
 	addConversion(TypeKind::i32, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert i32 to struct");
 	addConversion(TypeKind::i32, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert i32 to unknown");
-
+	addConversion(TypeKind::i32, TypeKind::Array, ConversionType::NotAllowed, "cannot convert i32 to array");
 
 	// i64 conversions
 	addConversion(TypeKind::i64, TypeKind::i8, ConversionType::Narrowing, "narrowing i64 to i8");
@@ -88,6 +90,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::i64, TypeKind::Function, ConversionType::NotAllowed, "cannot convert i64 to function");
 	addConversion(TypeKind::i64, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert i64 to struct");
 	addConversion(TypeKind::i64, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert i64 to unknown");
+	addConversion(TypeKind::i64, TypeKind::Array, ConversionType::NotAllowed, "cannot convert i64 to array");
 
 	// u8 conversions
 	addConversion(TypeKind::u8, TypeKind::i8, ConversionType::ExplicitOnly);
@@ -109,6 +112,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::u8, TypeKind::Function, ConversionType::NotAllowed, "cannot convert u8 to function");
 	addConversion(TypeKind::u8, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert u8 to struct");
 	addConversion(TypeKind::u8, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert u8 to unknown");
+	addConversion(TypeKind::u8, TypeKind::Array, ConversionType::NotAllowed, "cannot convert u8 to array");
 
 	// u16 conversions
 	addConversion(TypeKind::u16, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert u16 to i8");
@@ -130,6 +134,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::u16, TypeKind::Function, ConversionType::NotAllowed, "cannot convert u16 to function");
 	addConversion(TypeKind::u16, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert u16 to struct");
 	addConversion(TypeKind::u16, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert u16 to unknown");
+	addConversion(TypeKind::u16, TypeKind::Array, ConversionType::NotAllowed, "cannot convert u16 to array");
 
 	// u32 conversions
 	addConversion(TypeKind::u32, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert u32 to i8");
@@ -151,6 +156,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::u32, TypeKind::Function, ConversionType::NotAllowed, "cannot convert u32 to function");
 	addConversion(TypeKind::u32, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert u32 to struct");
 	addConversion(TypeKind::u32, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert u32 to unknown");
+	addConversion(TypeKind::u32, TypeKind::Array, ConversionType::NotAllowed, "cannot convert u32 to array");
 
 	// u64 conversions
 	addConversion(TypeKind::u64, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert u64 to i8");
@@ -172,6 +178,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::u64, TypeKind::Function, ConversionType::NotAllowed, "cannot convert u64 to function");
 	addConversion(TypeKind::u64, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert u64 to struct");
 	addConversion(TypeKind::u64, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert u64 to unknown");
+	addConversion(TypeKind::u64, TypeKind::Array, ConversionType::NotAllowed, "cannot convert u64 to array");
 
 	// f32 conversions
 	addConversion(TypeKind::f32, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert f32 to i8");
@@ -193,6 +200,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::f32, TypeKind::Function, ConversionType::NotAllowed, "cannot convert f32 to function");
 	addConversion(TypeKind::f32, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert f32 to struct");
 	addConversion(TypeKind::f32, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert f32 to unknown");
+	addConversion(TypeKind::f32, TypeKind::Array, ConversionType::NotAllowed, "cannot convert f32 to array");
 
 	// f64 conversions
 	addConversion(TypeKind::f64, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert f64 to i8");
@@ -214,6 +222,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::f64, TypeKind::Function, ConversionType::NotAllowed, "cannot convert f64 to function");
 	addConversion(TypeKind::f64, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert f64 to struct");
 	addConversion(TypeKind::f64, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert f64 to unknown");
+	addConversion(TypeKind::f64, TypeKind::Array, ConversionType::NotAllowed, "cannot convert f64 to array");
 
 	// char conversions
 	addConversion(TypeKind::Char, TypeKind::i8, ConversionType::ExplicitOnly, "explicit cast needed to convert char to i8");
@@ -235,6 +244,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Char, TypeKind::Function, ConversionType::NotAllowed, "cannot convert char  to function");
 	addConversion(TypeKind::Char, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert char  to struct");
 	addConversion(TypeKind::Char, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert char to unknown");
+	addConversion(TypeKind::Char, TypeKind::Array, ConversionType::NotAllowed, "cannot convert char to array");
 
 	// bool conversions
 	addConversion(TypeKind::Bool, TypeKind::i8, ConversionType::NotAllowed, "cannot convert bool to i8");
@@ -256,6 +266,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Bool, TypeKind::Function, ConversionType::NotAllowed, "cannot convert bool to function");
 	addConversion(TypeKind::Bool, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert bool to struct");
 	addConversion(TypeKind::Bool, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert bool to unknown");
+	addConversion(TypeKind::Bool, TypeKind::Array, ConversionType::NotAllowed, "cannot convert bool to array");
 
 	// void conversions
 	addConversion(TypeKind::Void, TypeKind::i8, ConversionType::NotAllowed, "cannot convert void to i8");
@@ -277,6 +288,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Void, TypeKind::Function, ConversionType::NotAllowed, "cannot convert void to function");
 	addConversion(TypeKind::Void, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert void to struct");
 	addConversion(TypeKind::Void, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert void to unknown");
+	addConversion(TypeKind::Void, TypeKind::Array, ConversionType::NotAllowed, "cannot convert void to array");
 
 	// function conversions
 	addConversion(TypeKind::Function, TypeKind::i8, ConversionType::NotAllowed, "cannot convert function to i8");
@@ -298,6 +310,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Function, TypeKind::Function, ConversionType::SameType);
 	addConversion(TypeKind::Function, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert function to struct");
 	addConversion(TypeKind::Function, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert function to unknown");
+	addConversion(TypeKind::Function, TypeKind::Array, ConversionType::NotAllowed, "cannot convert function to array");
 
 	// struct conversions
 	addConversion(TypeKind::Struct, TypeKind::i8, ConversionType::NotAllowed, "cannot convert struct to i8");
@@ -319,6 +332,29 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Struct, TypeKind::Function, ConversionType::NotAllowed, "cannot convert struct to function");
 	addConversion(TypeKind::Struct, TypeKind::Struct, ConversionType::SameType);
 	addConversion(TypeKind::Struct, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert struct to unknown");
+	addConversion(TypeKind::Struct, TypeKind::Array, ConversionType::NotAllowed, "cannot convert struct to array");
+
+	// array conversions (revise these later, like allowing arrays of same type to be converted to another array of the same type?)
+	addConversion(TypeKind::Array, TypeKind::i8, ConversionType::NotAllowed, "cannot convert array to i8");
+	addConversion(TypeKind::Array, TypeKind::i16, ConversionType::NotAllowed, "cannot convert array to i16");
+	addConversion(TypeKind::Array, TypeKind::i32, ConversionType::NotAllowed, "cannot convert array to i32");
+	addConversion(TypeKind::Array, TypeKind::i64, ConversionType::NotAllowed, "cannot convert array to i64");
+
+	addConversion(TypeKind::Array, TypeKind::u8, ConversionType::NotAllowed, "cannot convert array to u8");
+	addConversion(TypeKind::Array, TypeKind::u16, ConversionType::NotAllowed, "cannot convert array to u16");
+	addConversion(TypeKind::Array, TypeKind::u32, ConversionType::NotAllowed, "cannot convert array to u32");
+	addConversion(TypeKind::Array, TypeKind::u64, ConversionType::NotAllowed, "cannot convert array to u64");
+
+	addConversion(TypeKind::Array, TypeKind::f32, ConversionType::NotAllowed, "cannot convert array to f32");
+	addConversion(TypeKind::Array, TypeKind::f64, ConversionType::NotAllowed, "cannot convert array to f64");
+
+	addConversion(TypeKind::Array, TypeKind::Char, ConversionType::NotAllowed, "cannot convert array to char");
+	addConversion(TypeKind::Array, TypeKind::Bool, ConversionType::NotAllowed, "cannot convert array to bool");
+	addConversion(TypeKind::Array, TypeKind::Void, ConversionType::NotAllowed, "cannot convert array to void");
+	addConversion(TypeKind::Array, TypeKind::Function, ConversionType::NotAllowed, "cannot convert array to function");
+	addConversion(TypeKind::Array, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert array to struct");
+	addConversion(TypeKind::Array, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert array to unknown");
+	addConversion(TypeKind::Array, TypeKind::Array, ConversionType::SameType, "cannot convert array to array");
 
 	// unknown conversions
 	addConversion(TypeKind::Unknown, TypeKind::i8, ConversionType::NotAllowed, "cannot convert unknown to i8");
@@ -340,6 +376,7 @@ TypeConversions::TypeConversions()
 	addConversion(TypeKind::Unknown, TypeKind::Function, ConversionType::NotAllowed, "cannot convert unknown to function");
 	addConversion(TypeKind::Unknown, TypeKind::Struct, ConversionType::NotAllowed, "cannot convert unknown to struct");
 	addConversion(TypeKind::Unknown, TypeKind::Unknown, ConversionType::NotAllowed, "cannot convert unknown to unknown");
+	addConversion(TypeKind::Unknown, TypeKind::Array, ConversionType::NotAllowed, "cannot convert unknown to array");
 }
 
 void TypeConversions::addConversion(TypeKind from, TypeKind to, ConversionType type, const char* message)

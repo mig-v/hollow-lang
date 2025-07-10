@@ -43,10 +43,21 @@ private:
 	void fillOpcodeTable();
 	void debugViewState();
 
+	// loads / stores values in the current stack frame
 	uint64_t loadLocal(uint16_t slot);
 	void storeLocal(uint16_t slot, uint64_t value);
+
+	// loads / stores values in the globals vector at 'slot'
 	uint64_t loadGlobal(uint16_t slot);
 	void storeGlobal(uint16_t slot, uint64_t value);
+
+	// loads / stores value in the globals vector at the absolute address 'addr'
+	uint64_t loadGlobalInd(uint64_t addr);
+	void storeGlobalInd(uint64_t addr, uint64_t value);
+
+	// loads / stores values on the stack at the absolute address 'addr'
+	uint64_t loadLocalInd(uint64_t addr);
+	void storeLocalInd(uint64_t addr, uint64_t value);
 
 	void pushStackFrame(size_t basePointer, size_t returnAddress, size_t retSP);
 	void popStackFrame();
@@ -149,6 +160,22 @@ private:
 
 	void SHR_I8(); void SHR_I16(); void SHR_I32(); void SHR_I64();
 	void SHR_U8(); void SHR_U16(); void SHR_U32(); void SHR_U64();
+
+	void LDL_IND_I8(); void LDL_IND_I16(); void LDL_IND_I32(); void LDL_IND_I64();
+	void LDL_IND_U8(); void LDL_IND_U16(); void LDL_IND_U32(); void LDL_IND_U64();
+	void LDL_IND_F32(); void LDL_IND_F64(); void LDL_IND_CHAR(); void LDL_IND_BOOL();
+
+	void LDG_IND_I8(); void LDG_IND_I16(); void LDG_IND_I32(); void LDG_IND_I64();
+	void LDG_IND_U8(); void LDG_IND_U16(); void LDG_IND_U32(); void LDG_IND_U64();
+	void LDG_IND_F32(); void LDG_IND_F64(); void LDG_IND_CHAR(); void LDG_IND_BOOL();
+
+	void STL_IND_I8(); void STL_IND_I16(); void STL_IND_I32(); void STL_IND_I64();
+	void STL_IND_U8(); void STL_IND_U16(); void STL_IND_U32(); void STL_IND_U64();
+	void STL_IND_F32(); void STL_IND_F64(); void STL_IND_CHAR(); void STL_IND_BOOL();
+
+	void STG_IND_I8(); void STG_IND_I16(); void STG_IND_I32(); void STG_IND_I64();
+	void STG_IND_U8(); void STG_IND_U16(); void STG_IND_U32(); void STG_IND_U64();
+	void STG_IND_F32(); void STG_IND_F64(); void STG_IND_CHAR(); void STG_IND_BOOL();
 
 	void NOP();
 };

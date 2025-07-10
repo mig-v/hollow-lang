@@ -1,14 +1,15 @@
 #include "ast_node.h"
 #include "ast_expr.h"
 #include "ast_stmt.h"
+#include "ast_type.h"
 #include "ast_printer.h"
 #include "semantic_analysis.h"
 #include "bytecode_emitter.h"
 #include "type_checker.h"
 
-ASTVarDecl::ASTVarDecl(TokenType varType, Token varIdentifier, ASTExpr* initialization)
+ASTVarDecl::ASTVarDecl(ASTType* type, Token varIdentifier, ASTExpr* initialization)
 {
-	this->varType = varType;
+	this->type = type;
 	this->varIdentifier = varIdentifier;
 	this->initialization = initialization;
 	this->scope = 0;
@@ -21,7 +22,7 @@ bool ASTVarDecl::operator==(const ASTNode& other) const
 	if (const ASTVarDecl* node = dynamic_cast<const ASTVarDecl*>(&other))
 	{
 		return (astEqual(node->initialization, this->initialization))
-			&& (node->varType == this->varType)
+			&& (astTypeEqual(node->type, this->type))
 			&& (std::get<std::string>(node->varIdentifier.value) == std::get<std::string>(this->varIdentifier.value));
 	}
 

@@ -1,17 +1,13 @@
 #pragma once
 
 #include "ast_visitor.h"
-#include "memory_arena.h"
-#include "diagnostic.h"
-#include "type_conversions.h"
-#include "l_value.h"
 
-class TypeChecker : public ASTVisitor
+// mutates the AST, replacing constant expressions with literal nodes
+// E.G. will replace things like 10 + 20, which would be BinaryExpr -> IntLiteral + IntLiteral with just an IntLiteral(30) node
+class ConstantFolder : public ASTVisitor
 {
 public:
-	TypeChecker();
-	~TypeChecker();
-	void typeCheck(std::vector<ASTNode*>& ast, MemoryArena* nodeArena, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter);
+	ConstantFolder();
 
 	void visitIntLiteral(ASTIntLiteral& node) override;
 	void visitDoubleLiteral(ASTDoubleLiteral& node) override;
@@ -38,18 +34,4 @@ public:
 	void visitParamList(ASTParamList& node) override;
 	void visitArgList(ASTArgList& node) override;
 	void visitArrayAccess(ASTArrayAccess& node) override;
-private:
-	bool conversionIsLegal(const ConversionInfo& conversion, ASTNode* nodeCtx);
-	bool typesLegalForComparison(TypeKind lhs, TypeKind rhs);
-	bool typesLegalForArithmetic(TypeKind lhs, TypeKind rhs);
-	bool typesLegalForBitwise(TypeKind lhs, TypeKind rhs);
-
-	void unifyBinaryOperands(ASTBinaryExpr& node, bool isComparisonOp);
-	ASTExpr* unwrapExpr(ASTExpr* expr);
-
-	MemoryArena* nodeArena;
-	MemoryArena* typeArena;
-	DiagnosticReporter* diagnosticReporter;
-	std::vector<TypeInfo*> functionCtxStack;
-	TypeConversions* typeConversions;
 };

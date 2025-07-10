@@ -1,5 +1,6 @@
 #include "semantic_utils.h"
 #include "debug_utils.h"
+#include "ast_type.h"
 
 #include <iostream>
 
@@ -24,6 +25,47 @@ namespace SemanticUtils
 			case TokenType::typeKeyword: return TypeKind::Struct;
 			default:
 				return TypeKind::Unknown;
+		}
+	}
+
+	TypeKind getTypeFromASTType(ASTType* astType)
+	{
+		switch (astType->astType)
+		{
+			case ASTTypeKind::Primitive:
+				return getTypeFromToken(static_cast<ASTPrimitiveType*>(astType)->primitiveType);
+			case ASTTypeKind::Array:
+				return TypeKind::Array;
+			case ASTTypeKind::Struct:
+				return TypeKind::Struct;
+			case ASTTypeKind::Pointer:
+				return TypeKind::Pointer;
+			case ASTTypeKind::Function:
+				return TypeKind::Function;
+			default:
+				return TypeKind::Unknown;
+		}
+	}
+
+	bool typeIsPrimitive(TypeKind type)
+	{
+		switch (type)
+		{
+			case TypeKind::u8:
+			case TypeKind::i8:
+			case TypeKind::u16:
+			case TypeKind::i16:
+			case TypeKind::u32:
+			case TypeKind::i32:
+			case TypeKind::u64:
+			case TypeKind::i64:
+			case TypeKind::f32:
+			case TypeKind::f64:
+			case TypeKind::Bool:
+			case TypeKind::Char:
+				return true;
+			default:
+				return false;
 		}
 	}
 

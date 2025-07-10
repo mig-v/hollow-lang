@@ -1,6 +1,7 @@
 #include "ast_node.h"
 #include "ast_expr.h"
 #include "ast_stmt.h"
+#include "ast_type.h"
 #include "ast_printer.h"
 #include "semantic_analysis.h"
 #include "bytecode_emitter.h"
@@ -8,12 +9,11 @@
 
 #include <iostream>
 
-ASTParameter::ASTParameter(Token paramIdentifier, Token paramType)
+ASTParameter::ASTParameter(Token paramIdentifier, ASTType* type)
 {
 	this->paramIdentifier = paramIdentifier;
-	this->paramType = paramType;
+	this->type = type;
 	this->typeInfo = nullptr;
-	
 }
 
 bool ASTParameter::operator==(const ASTNode& other) const
@@ -22,7 +22,7 @@ bool ASTParameter::operator==(const ASTNode& other) const
 	{
 		// NOTE: This .type comparison will only work for built in types. Once user types are added their token string variant value will need
 		//       to be compared
-		return ((node->paramType.type == this->paramType.type)
+		return ((astTypeEqual(node->type, this->type))
 			&& (std::get<std::string>(node->paramIdentifier.value) == std::get<std::string>(this->paramIdentifier.value)));
 	}
 

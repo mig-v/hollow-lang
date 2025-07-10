@@ -141,6 +141,8 @@ void LexerTests::runAll()
 	for (auto const& [key, val] : testSuite)
 		runSpecific(key);
 
+	std::cout << std::endl;
+
 	logFile.close();
 }
 
@@ -164,7 +166,7 @@ void LexerTests::runSpecific(const std::string& filename)
 			if (logFile.is_open())
 			{
 				if (token) 
-					logFile << "(line " << token->lineNum << ") expected " << DebugUtils::tokenTypeToString(*token) << ", got " << tokenTypeToStr[(int)expected[i]] << std::endl;
+					logFile << "(line " << token->lineNum << ") expected " << DebugUtils::tokenTypeToString(token->type) << ", got " << tokenTypeToStr[(int)expected[i]] << std::endl;
 				else
 					logFile << "token stream ended, extra token: " << tokenTypeToStr[(int)expected[i]] << std::endl;
 			}

@@ -37,9 +37,12 @@ public:
 	void visitArgument(ASTArgument& node) override;
 	void visitParamList(ASTParamList& node) override;
 	void visitArgList(ASTArgList& node) override;
+	void visitArrayAccess(ASTArrayAccess& node) override;
 
 private:
 	void checkForMainFunction();
+	void visitASTType(ASTNode& rootNode, TypeInfo* typeInfo, ASTType* type);
+	uint64_t calculateElementSizeInBytes(TypeInfo* elementType);
 
 	Environment* env;
 	MemoryArena* typeArena;

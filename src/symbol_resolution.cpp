@@ -1,5 +1,8 @@
 #include "symbol_resolution.h"
 #include "semantic_utils.h"
+#include "ast_type.h"
+#include "constant_evaluator.h"
+#include <iostream>
 
 SymbolResolution::SymbolResolution()
 {
@@ -22,7 +25,101 @@ void SymbolResolution::resolve(std::vector<ASTNode*>& ast, DiagnosticReporter* d
 	for (ASTNode* node : ast)
 		node->accept(*this);
 
-	env->dumpEnvironment();
+	//env->dumpEnvironment();
+}
+
+uint64_t SymbolResolution::calculateElementSizeInBytes(TypeInfo* elementType)
+{
+	switch (elementType->type)
+	{
+		case TypeKind::i8:
+		case TypeKind::u8:
+		case TypeKind::Char:
+		case TypeKind::Bool:
+			return 1;
+		case TypeKind::i16:
+		case TypeKind::u16:
+			return 2;
+		case TypeKind::i32:
+		case TypeKind::u32:
+		case TypeKind::f32:
+			return 4;
+		case TypeKind::i64:
+		case TypeKind::u64:
+		case TypeKind::f64:
+			return 8;
+		case TypeKind::Array:
+			return elementType->arrayLength * calculateElementSizeInBytes(elementType->elementType);
+	}
+}
+
+uint64_t SymbolResolution::calculateSlotCountForElement(TypeInfo* elementType)
+{
+	switch (elementType->type)
+	{
+		case TypeKind::i8:
+		case TypeKind::u8:
+		case TypeKind::Char:
+		case TypeKind::Bool:
+			return 1;
+		case TypeKind::i16:
+		case TypeKind::u16:
+			return 1;
+		case TypeKind::i32:
+		case TypeKind::u32:
+		case TypeKind::f32:
+			return 1;
+		case TypeKind::i64:
+		case TypeKind::u64:
+		case TypeKind::f64:
+			return 1;
+		case TypeKind::Array:
+			return elementType->arrayLength * calculateSlotCountForElement(elementType->elementType);
+	}
+}
+
+void SymbolResolution::visitASTType(ASTNode& rootNode, TypeInfo* typeInfo, ASTType* type)
+{
+	switch (type->astType)
+	{
+	case ASTTypeKind::Primitive:
+	{
+		ASTPrimitiveType* primitive = static_cast<ASTPrimitiveType*>(type);
+		typeInfo->type = SemanticUtils::getTypeFromToken(primitive->primitiveType);
+		break;
+	}
+	case ASTTypeKind::Array:
+	{
+		std::cout << "in ASTTypeKind::Array\n";
+		typeInfo->type = TypeKind::Array;
+		ASTArrayType* arr = static_cast<ASTArrayType*>(type);
+		arr->size->accept(*this);
+
+		typeInfo->elementType = typeArena.alloc<TypeInfo>();
+		visitASTType(rootNode, typeInfo->elementType, arr->elementType);
+
+		// TODO: calculate the element size of what the array is holding
+		ConstantEvaluator evaluator;
+		evaluator.eval(arr->size);
+
+		if (evaluator.constant.valid && evaluator.constant.value > 0)
+			typeInfo->arrayLength = static_cast<size_t>(evaluator.constant.value);
+		else
+			diagnosticReporter->reportDiagnostic("invalid array size, must be positive compile time constant", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, rootNode.line, rootNode.col);
+
+		typeInfo->elementSize = calculateElementSizeInBytes(typeInfo->elementType);
+		typeInfo->slotCountPerElement = calculateSlotCountForElement(typeInfo->elementType);
+		std::cout << "element size = " << typeInfo->elementSize << " slot count per element = " << typeInfo->slotCountPerElement << std::endl;
+		break;
+	}
+
+	case ASTTypeKind::Struct:
+		break;
+	case ASTTypeKind::Pointer:
+		break;
+	case ASTTypeKind::Function:
+		break;
+	}
 }
 
 void SymbolResolution::visitFuncDecl(ASTFuncDecl& node)
@@ -83,14 +180,19 @@ void SymbolResolution::visitVarDecl(ASTVarDecl& node)
 	}
 
 	node.typeInfo->name = identifier;
-	node.typeInfo->type = SemanticUtils::getTypeFromToken(node.varType);
+	node.typeInfo->type = SemanticUtils::getTypeFromASTType(node.type);
 
 	if (node.initialization)
 		node.initialization->accept(*this);
 
+	visitASTType(node, node.typeInfo, node.type);
+
 	// get the scope and slot index for the varaiable and add it into the symbol table
 	node.scope = env->getScopeDepth();
 	node.slotIndex = table->declareVar(identifier, node.typeInfo, node.scope);
+	node.symbol = table->getSymbol(identifier);
+
+	env->dumpEnvironment();
 }
 
 void SymbolResolution::visitIdentifier(ASTIdentifier& node)
@@ -103,6 +205,9 @@ void SymbolResolution::visitIdentifier(ASTIdentifier& node)
 		std::string message = "undefined identifier \"" + identifier + "\"";
 		diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::UndefinedIdentifier, ErrorPhase::SymbolResolution, node.line, node.col);
 	}
+
+	// not sure if i need this
+	//node.symbol = symbol;
 }
 
 void SymbolResolution::visitParamList(ASTParamList& node)
@@ -115,6 +220,7 @@ void SymbolResolution::visitParamList(ASTParamList& node)
 
 	SymbolTable* table = env->getCurrentScope();
 	int scopeDepth = env->getScopeDepth();
+
 	for (ASTParameter* param : node.params)
 	{
 		visitParameter(*param);
@@ -130,6 +236,7 @@ void SymbolResolution::visitParamList(ASTParamList& node)
 		{
 			table->declareVar(identifier, param->typeInfo, scopeDepth);
 			functionCtx->paramTypes.emplace_back(param->typeInfo);
+			table->getSymbol(identifier)->isParameter = true;
 		}
 	}
 }
@@ -138,7 +245,8 @@ void SymbolResolution::visitParameter(ASTParameter& node)
 {
 	node.typeInfo = typeArena.alloc<TypeInfo>();
 	node.typeInfo->name = std::get<std::string>(node.paramIdentifier.value);
-	node.typeInfo->type = SemanticUtils::getTypeFromToken(node.paramType.type);
+	visitASTType(node, node.typeInfo, node.type); 
+	//node.typeInfo->type = SemanticUtils::getTypeFromToken(node.paramType.type);
 }
 
 void SymbolResolution::visitWhileLoop(ASTWhileLoop& node)
@@ -257,4 +365,10 @@ void SymbolResolution::visitForLoop(ASTForLoop& node)
 
 	//env->dumpEnvironment();
 	env->popScope();
+}
+
+void SymbolResolution::visitArrayAccess(ASTArrayAccess& node)
+{
+	node.arrayExpr->accept(*this);
+	node.indexExpr->accept(*this);
 }

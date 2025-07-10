@@ -4,6 +4,7 @@
 #include "symbol_table.h"
 
 class ASTExpr;
+class ASTType;
 
 class ASTStmt : public ASTNode
 {
@@ -26,18 +27,20 @@ public:
 class ASTVarDecl : public ASTStmt
 {
 public:
-	ASTVarDecl(TokenType varType, Token varIdentifier, ASTExpr* initialization);
+	ASTVarDecl(ASTType* type, Token varIdentifier, ASTExpr* initialization);
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(ASTVisitor& visitor);
 
-	TokenType varType;
+	//TokenType varType;
+	ASTType* type;
 	Token varIdentifier;
 	ASTExpr* initialization;
 
 	// type resolution data, populated during semantic analysis
 	TypeInfo* typeInfo;
+	Symbol* symbol;
 	int scope;
 	int slotIndex;
 };

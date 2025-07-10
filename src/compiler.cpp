@@ -42,7 +42,7 @@ void Compiler::compile(const std::string& file)
 	typeChecker = new TypeChecker();
 	vm = new VM();
 
-	if (!lexer->lexFile(TEST_PATH"/bytecode_emitter_tests/short_circuit_test.hollow"))
+	if (!lexer->lexFile(TEST_PATH"/parser_tests/temp.hollow"))
 		return;
 
 	parser->parse(lexer->getTokens(), &nodeArena, &diagnosticReporter);
@@ -62,10 +62,10 @@ void Compiler::compile(const std::string& file)
 	if (diagnosticReporter.hasErrors())
 		return;
 
-	bytecodeEmitter->generateBytecode(parser->getAst());
 	//parser->printAST();
-	//bytecodeDisassembler->setBytecode(bytecodeEmitter->getBytecode());
-	//bytecodeDisassembler->disassemble();
+	bytecodeEmitter->generateBytecode(parser->getAst());
+	bytecodeDisassembler->setBytecode(bytecodeEmitter->getBytecode());
+	bytecodeDisassembler->disassemble();
 	vm->execute(bytecodeEmitter->getBytecode(), bytecodeEmitter->getFunctionTable(), globalVarCount);
-	bytecodeEmitter->rawDumpBytecode();
+	//bytecodeEmitter->rawDumpBytecode();
 }

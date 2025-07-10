@@ -1,6 +1,9 @@
 #include "type_checker.h"
 #include "semantic_utils.h"
 #include "debug_utils.h"
+#include "ast_utils.h"
+
+#include <iostream>
 
 TypeChecker::TypeChecker()
 {
@@ -65,20 +68,6 @@ bool TypeChecker::typesLegalForBitwise(TypeKind lhs, TypeKind rhs)
 	// bitwise operations disallowed for opposite signed integers 
 	if ((SemanticUtils::isSigned(lhs) && SemanticUtils::isUnsigned(rhs)) || (SemanticUtils::isUnsigned(lhs) && SemanticUtils::isSigned(rhs)))
 		return false;
-}
-
-LValue TypeChecker::isLValue(ASTExpr* expr)
-{
-	LValue lValue;
-	ASTExpr* unwrappedExpr = unwrapExpr(expr);
-	if (ASTIdentifier* var = dynamic_cast<ASTIdentifier*>(unwrappedExpr))
-	{
-		lValue.kind = LValueKind::Slot;
-		lValue.slotIndex = var->slotIndex;
-		lValue.scope = var->scope;
-	}
-
-	return lValue;
 }
 
 ASTExpr* TypeChecker::unwrapExpr(ASTExpr* expr)
@@ -217,7 +206,6 @@ void TypeChecker::visitAssign(ASTAssign& node)
 		|| (SemanticUtils::isBitwiseAssignment(node.op.type) && (SemanticUtils::isInteger(node.typeInfo->type) && SemanticUtils::isNumeric(node.assignee->typeInfo->type))))
 	{
 		ConversionInfo conversion = typeConversions->getConversion(node.value->typeInfo->type, node.assignee->typeInfo->type);
-
 		if (conversion.type == ConversionType::SameType || !conversionIsLegal(conversion, &node))
 			return;
 
@@ -338,14 +326,9 @@ void TypeChecker::visitBinaryExpr(ASTBinaryExpr& node)
 void TypeChecker::visitUnaryExpr(ASTUnaryExpr& node)
 {
 	node.expr->accept(*this);
-	
-	LValue lValue = isLValue(node.expr);
+	ASTExpr* expr = ASTUtils::unwrapGroupExpr(node.expr);
 
-	if (lValue.kind == LValueKind::Slot)
-	{
-		node.slotIndex = lValue.slotIndex;
-		node.scope = lValue.scope;
-	}
+	LValue lValue = expr->getLValue();
 
 	// '!' is only defined for bool types
 	if (node.op.type == TokenType::LogicalNot)
@@ -373,7 +356,7 @@ void TypeChecker::visitUnaryExpr(ASTUnaryExpr& node)
 		else if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
 		{
 			std::string message = "prefix ";
-			message += DebugUtils::tokenTypeToString(node.op);
+			message += DebugUtils::tokenTypeToString(node.op.type);
 			message += " can only be applied to unsigned or signed integers";
 			diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
 			node.typeInfo->type = TypeKind::Unknown;
@@ -388,7 +371,7 @@ void TypeChecker::visitUnaryExpr(ASTUnaryExpr& node)
 		if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
 		{
 			std::string message = "operator ";
-			message += DebugUtils::tokenTypeToString(node.op);
+			message += DebugUtils::tokenTypeToString(node.op.type);
 			message += " can only be applied to unsigned or signed integers";
 			diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
 			node.typeInfo->type = TypeKind::Unknown;
@@ -440,9 +423,11 @@ void TypeChecker::visitPostfix(ASTPostfix& node)
 {
 	node.expr->accept(*this);
 
+
 	if (node.op.type == TokenType::Increment || node.op.type == TokenType::Decrement)
 	{
-		LValue lValue = isLValue(node.expr);
+		ASTExpr* expr = ASTUtils::unwrapGroupExpr(node.expr);
+		LValue lValue = expr->getLValue();
 		if (lValue.kind == LValueKind::Invalid)
 		{
 			diagnosticReporter->reportDiagnostic("postfix operand must be modifiable l-value", DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
@@ -452,17 +437,11 @@ void TypeChecker::visitPostfix(ASTPostfix& node)
 		else if (!SemanticUtils::isInteger(node.expr->typeInfo->type))
 		{
 			std::string message = "postfix ";
-			message += DebugUtils::tokenTypeToString(node.op);
+			message += DebugUtils::tokenTypeToString(node.op.type);
 			message += " can only be applied to unsigned or signed integers";
 			diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleOperands, ErrorPhase::TypeChecker, node.line, node.col);
 			node.typeInfo->type = TypeKind::Unknown;
 			return;
-		}
-
-		if (lValue.kind == LValueKind::Slot)
-		{
-			node.slotIndex = lValue.slotIndex;
-			node.scope = lValue.scope;
 		}
 		
 		node.typeInfo->type = node.expr->typeInfo->type;
@@ -494,16 +473,6 @@ void TypeChecker::visitArgList(ASTArgList& node)
 	if (functionCtxStack.size() == 0)
 		return;
 	
-	//if (node.args.size() != functionCtxStack.back()->paramTypes.size())
-	//{
-	//	std::string message = "mismatched function argument count, expected ";
-	//	message += std::to_string(functionCtxStack.back()->paramTypes.size());
-	//	message += " but got ";
-	//	message += std::to_string(node.args.size());
-	//	diagnosticReporter->reportDiagnostic(message, DiagnosticLevel::Error, DiagnosticType::IncompatibleArgCount, ErrorPhase::TypeChecker, node.line, node.col);
-	//	return;
-	//}
-
 	for (size_t i = 0; i < node.args.size(); i++)
 	{
 		node.args[i]->accept(*this);
@@ -523,7 +492,18 @@ void TypeChecker::visitArgList(ASTArgList& node)
 	}
 }
 
-void TypeChecker::visitCast(ASTCast& node) 
+void TypeChecker::visitArrayAccess(ASTArrayAccess& node)
 {
+	// unify the types of index expr?
+	// need to unify 
 
+	// the types for pointer arithmetic / array accesses is u64
+	if (node.indexExpr->typeInfo->type != TypeKind::u64)
+	{
+		ASTCast* implicitCast = nodeArena->alloc<ASTCast>(node.indexExpr);
+		implicitCast->typeInfo = typeArena->alloc<TypeInfo>();
+		implicitCast->typeInfo->type = TypeKind::u64;
+		node.indexExpr = implicitCast;
+	}
+	
 }

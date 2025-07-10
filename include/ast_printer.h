@@ -32,7 +32,9 @@ public:
 	void visitParamList(ASTParamList& node, uint32_t depth);
 	void visitArgList(ASTArgList& node, uint32_t depth);
 	void visitCast(ASTCast& node, uint32_t depth);
+	void visitArrayAccess(ASTArrayAccess& node, uint32_t depth);
 
 	void printNull(uint32_t depth, const std::string& message);
 	void printTypeInfo(uint32_t depth, TypeInfo* info);
+	void printASTTypeInfo(uint32_t depth, ASTType* astType);
 };

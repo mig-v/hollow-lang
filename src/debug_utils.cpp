@@ -20,14 +20,29 @@ namespace DebugUtils
 			case TypeKind::Bool: return "bool";
 			case TypeKind::Void: return "void";
 			case TypeKind::Function: return "function";
+			case TypeKind::Array: return "array";
+			case TypeKind::Pointer: return "pointer";
+
 			default:
 				return "unknown";
 		}
 	}
 
-	const char* tokenTypeToString(const Token& token)
+	const char* lValueKindToString(LValueKind kind)
 	{
-		switch (token.type)
+		switch (kind)
+		{
+			case LValueKind::Slot:        return "Slot";
+			case LValueKind::Indirect:    return "Indirect";
+			case LValueKind::StructField: return "Invalid";
+			case LValueKind::Invalid:     return "Invalid";
+			default:                      return "Unknown";
+		}
+	}
+
+	const char* tokenTypeToString(TokenType type)
+	{
+		switch (type)
 		{
 			case TokenType::None:                    return "none"; break;
 			case TokenType::i8Keyword:		         return "i8"; break;

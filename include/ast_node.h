@@ -16,6 +16,7 @@ class TypeChecker;
 class ASTExpr;
 class ASTStmt;
 class ASTArgument;
+class ASTType;
 
 class ASTNode
 {
@@ -41,14 +42,15 @@ inline bool astEqual(const ASTNode* lhs, const ASTNode* rhs)
 class ASTParameter : public ASTNode
 {
 public:
-	ASTParameter(Token paramIdentifier, Token paramType);
+	ASTParameter(Token paramIdentifier, ASTType* type);
 
 	bool operator==(const ASTNode& other) const;
 	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(ASTVisitor& visitor);
 
 	Token paramIdentifier;
-	Token paramType;
+	ASTType* type;
+	//Token paramType;
 	TypeInfo* typeInfo;
 };
 

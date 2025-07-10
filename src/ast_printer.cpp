@@ -2,6 +2,7 @@
 
 #include "ast_printer.h"
 #include "debug_utils.h"
+#include "ast_type.h"
 
 namespace { constexpr uint32_t SPACES_PER_DEPTH = 4; }
 
@@ -43,12 +44,51 @@ void ASTPrinter::printTypeInfo(uint32_t depth, TypeInfo* info)
 {
 	if (!info)
 	{
-		printNull(depth, "(no type information)");
+		printNull(depth + 1, "(no type information)");
 		return;
 	}
 
 	std::string indent(SPACES_PER_DEPTH * depth, ' ');
-	std::cout << indent << "[Type Info] " << DebugUtils::typeKindToString(info->type) << std::endl;
+	std::string nextIndent(SPACES_PER_DEPTH * (depth + 1), ' ');
+
+	std::cout << indent << "[Type Info]\n";
+	std::cout << nextIndent << DebugUtils::typeKindToString(info->type) << std::endl;
+
+	// print extra type specific type info
+	//if (info->type == TypeKind::Array)
+	//{
+	//	std::cout << nextIndent << "[Arr Element Type]\n";
+	//	printTypeInfo(depth + 1, info->elementType);
+	//	std::cout << nextIndent << "[Array Length] " << info->arrayLength << std::endl;
+	//	std::cout << nextIndent << "[Array Element Size] " << info->elementSize << std::endl;
+	//	std::cout << nextIndent << "[Array Slot Count Per Element] " << info->slotCountPerElement << std::endl;
+	//}
+}
+
+void ASTPrinter::printASTTypeInfo(uint32_t depth, ASTType* astType)
+{
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::string nextIndent(SPACES_PER_DEPTH * (depth + 1), ' ');
+
+	std::cout << indent << "[AST Type Info] ";
+
+	switch (astType->astType)
+	{
+		case ASTTypeKind::Primitive:
+		{
+			ASTPrimitiveType* type = static_cast<ASTPrimitiveType*>(astType);
+			std::cout << "Primitive " << DebugUtils::tokenTypeToString(type->primitiveType) << std::endl;
+			break;
+		}
+		case ASTTypeKind::Array:
+		{
+			std::cout << "Array\n";
+			ASTArrayType* type = static_cast<ASTArrayType*>(astType);
+			printASTTypeInfo(depth + 1, type->elementType);
+			type->size->accept(*this, depth + 1);
+			break;
+		}
+	}
 }
 
 void ASTPrinter::visitVarDecl(ASTVarDecl& node, uint32_t depth)
@@ -56,6 +96,7 @@ void ASTPrinter::visitVarDecl(ASTVarDecl& node, uint32_t depth)
 	std::string indent(SPACES_PER_DEPTH * depth, ' ');
 	std::cout << indent << "[Var Decl Node] " << std::get<std::string>(node.varIdentifier.value) << "\n";
 	printTypeInfo(depth + 1, node.typeInfo);
+	printASTTypeInfo(depth + 1, node.type);
 
 	if (node.initialization)
 		node.initialization->accept(*this, depth + 1);
@@ -274,26 +315,26 @@ void ASTPrinter::visitParameter(ASTParameter& node, uint32_t depth)
 {
 	std::string indent(SPACES_PER_DEPTH * depth, ' ');
 	std::cout << indent << "[Parameter Node] " << std::get<std::string>(node.paramIdentifier.value);
-		
-	switch (node.paramType.type)
-	{
-		case TokenType::u8Keyword:   std::cout << " : u8\n";   break;
-		case TokenType::u16Keyword:  std::cout << " : u16\n";  break;
-		case TokenType::u32Keyword:  std::cout << " : u32\n";  break;
-		case TokenType::u64Keyword:  std::cout << " : u64\n";  break;
-		case TokenType::i8Keyword:   std::cout << " : i8\n";   break;
-		case TokenType::i16Keyword:  std::cout << " : i16\n";  break;
-		case TokenType::i32Keyword:  std::cout << " : i32\n";  break;
-		case TokenType::i64Keyword:  std::cout << " : i64\n";  break;
-		case TokenType::f32Keyword:  std::cout << " : f32\n";  break;
-		case TokenType::f64Keyword:  std::cout << " : f64\n";  break;
-		case TokenType::charKeyword: std::cout << " : char\n"; break;
-		case TokenType::boolKeyword: std::cout << " : bool\n"; break;
+	printASTTypeInfo(depth + 1, node.type);
+	//switch (node.paramType.type)
+	//{
+	//	case TokenType::u8Keyword:   std::cout << " : u8\n";   break;
+	//	case TokenType::u16Keyword:  std::cout << " : u16\n";  break;
+	//	case TokenType::u32Keyword:  std::cout << " : u32\n";  break;
+	//	case TokenType::u64Keyword:  std::cout << " : u64\n";  break;
+	//	case TokenType::i8Keyword:   std::cout << " : i8\n";   break;
+	//	case TokenType::i16Keyword:  std::cout << " : i16\n";  break;
+	//	case TokenType::i32Keyword:  std::cout << " : i32\n";  break;
+	//	case TokenType::i64Keyword:  std::cout << " : i64\n";  break;
+	//	case TokenType::f32Keyword:  std::cout << " : f32\n";  break;
+	//	case TokenType::f64Keyword:  std::cout << " : f64\n";  break;
+	//	case TokenType::charKeyword: std::cout << " : char\n"; break;
+	//	case TokenType::boolKeyword: std::cout << " : bool\n"; break;
 
-		// if the type token isn't a built in type, then its a user defined type so it will be stored in the tokens std::variant<std::string> value
-		default:
-			std::cout << " : " << std::get<std::string>(node.paramType.value) << std::endl;
-	}
+	//	// if the type token isn't a built in type, then its a user defined type so it will be stored in the tokens std::variant<std::string> value
+	//	default:
+	//		std::cout << " : " << std::get<std::string>(node.paramType.value) << std::endl;
+	//}
 }
 
 void ASTPrinter::visitArgument(ASTArgument& node, uint32_t depth)
@@ -331,4 +372,13 @@ void ASTPrinter::visitCast(ASTCast& node, uint32_t depth)
 	std::cout << indent << "[Cast Node]\n";
 	printTypeInfo(depth + 1, node.typeInfo);
 	node.expr->accept(*this, depth + 1);
+}
+
+void ASTPrinter::visitArrayAccess(ASTArrayAccess& node, uint32_t depth)
+{
+	std::string indent(SPACES_PER_DEPTH * depth, ' ');
+	std::cout << indent << "[Array Access Node]\n";
+	printTypeInfo(depth + 1, node.typeInfo);
+	node.arrayExpr->accept(*this, depth + 1);
+	node.indexExpr->accept(*this, depth + 1);
 }

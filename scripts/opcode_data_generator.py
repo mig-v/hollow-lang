@@ -270,6 +270,84 @@ opcode_data = {
     "DEC_U16" : [],
     "DEC_U32" : [],
     "DEC_U64" : [],
+
+    "LDG_I8" : [],
+    "LDG_I16" : [],
+    "LDG_I32" : [],
+    "LDG_I64" : [],
+    "LDG_U8" : [],
+    "LDG_U16" : [],
+    "LDG_U32" : [],
+    "LDG_U64" : [],
+    "LDG_F32" : [],
+    "LDG_F64" : [],
+    "LDG_CHAR" : [],
+    "LDG_BOOL" : [],
+
+    "STG_I8" : [],
+    "STG_I16" : [],
+    "STG_I32" : [],
+    "STG_I64" : [],
+    "STG_U8" : [],
+    "STG_U16" : [],
+    "STG_U32" : [],
+    "STG_U64" : [],
+    "STG_F32" : [],
+    "STG_F64" : [],
+    "STG_CHAR" : [],
+    "STG_BOOL" : [],
+
+    "LDL_IND_I8" : [],
+    "LDL_IND_I16" : [],
+    "LDL_IND_I32" : [],
+    "LDL_IND_I64" : [],
+    "LDL_IND_U8" : [],
+    "LDL_IND_U16" : [],
+    "LDL_IND_U32" : [],
+    "LDL_IND_U64" : [],
+    "LDL_IND_F32" : [],
+    "LDL_IND_F64" : [],
+    "LDL_IND_CHAR" : [],
+    "LDL_IND_BOOL" : [],
+
+    "LDG_IND_I8" : [],
+    "LDG_IND_I16" : [],
+    "LDG_IND_I32" : [],
+    "LDG_IND_I64" : [],
+    "LDG_IND_U8" : [],
+    "LDG_IND_U16" : [],
+    "LDG_IND_U32" : [],
+    "LDG_IND_U64" : [],
+    "LDG_IND_F32" : [],
+    "LDG_IND_F64" : [],
+    "LDG_IND_CHAR" : [],
+    "LDG_IND_BOOL" : [],
+
+    "STL_IND_I8" : [],
+    "STL_IND_I16" : [],
+    "STL_IND_I32" : [],
+    "STL_IND_I64" : [],
+    "STL_IND_U8" : [],
+    "STL_IND_U16" : [],
+    "STL_IND_U32" : [],
+    "STL_IND_U64" : [],
+    "STL_IND_F32" : [],
+    "STL_IND_F64" : [],
+    "STL_IND_CHAR" : [],
+    "STL_IND_BOOL" : [],
+
+    "STG_IND_I8" : [],
+    "STG_IND_I16" : [],
+    "STG_IND_I32" : [],
+    "STG_IND_I64" : [],
+    "STG_IND_U8" : [],
+    "STG_IND_U16" : [],
+    "STG_IND_U32" : [],
+    "STG_IND_U64" : [],
+    "STG_IND_F32" : [],
+    "STG_IND_F64" : [],
+    "STG_IND_CHAR" : [],
+    "STG_IND_BOOL" : [],
 }
 
 def print_empty_operands(count):
@@ -308,11 +386,16 @@ def print_vm_func_definitions():
     for key, value in opcode_data.items():
         print(f"void VM::{key}()\n{{\n\n}}\n")
 
+def print_disassembler_data():
+    for key, value in opcode_data.items():
+        print(f"{{ Opcode::{key}, \"{key}\" }},")
+
 def main():
     #print_opcode_data()
     #print_vm_table()
     #print_vm_func_declarations()
-    print_vm_func_definitions()
+    #print_vm_func_definitions()
+    print_disassembler_data()
 
 if __name__ == "__main__":
     main()

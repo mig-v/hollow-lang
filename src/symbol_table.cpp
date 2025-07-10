@@ -14,11 +14,34 @@ void SymbolTable::setSlotOffset(int offset)
 	this->parentScopeSlotOffset = offset;
 }
 
+int SymbolTable::getSlotCountForType(TypeInfo* typeInfo)
+{
+	switch (typeInfo->type)
+	{
+	case TypeKind::u8:
+	case TypeKind::u16:
+	case TypeKind::u32:
+	case TypeKind::u64:
+	case TypeKind::i8:
+	case TypeKind::i16:
+	case TypeKind::i32:
+	case TypeKind::i64:
+	case TypeKind::f32:
+	case TypeKind::f64:
+	case TypeKind::Bool:
+	case TypeKind::Char:
+		return 1;
+	case TypeKind::Array:
+		return typeInfo->arrayLength * getSlotCountForType(typeInfo->elementType);
+	}
+}
+
 int SymbolTable::declareVar(const std::string& identifier, TypeInfo* typeInfo, int scopeDepth)
 {
-	int slot = nextSlot++;
+	int slot = nextSlot;
+	nextSlot += getSlotCountForType(typeInfo);
 	slot += parentScopeSlotOffset;
-	Symbol symbol = { scopeDepth, slot, typeInfo };
+	Symbol symbol = { scopeDepth, slot, typeInfo, false };
 	symbols[identifier] = symbol;
 	return symbol.slotIndex;
 }

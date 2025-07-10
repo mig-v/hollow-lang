@@ -1,5 +1,8 @@
 #include "bytecode_emitter.h"
 #include "ast_utils.h"
+#include "semantic_utils.h"
+#include <debug_utils.h>
+#include "l_value.h"
 
 #include <iostream>
 #include <iomanip>
@@ -29,7 +32,7 @@ void BytecodeEmitter::generateBytecode(std::vector<ASTNode*>& ast)
 	for (DeferredCall& call : deferredCalls)
 		resolveDeferredCall(call);
 
-	functionTable.dumpTable();
+	//functionTable.dumpTable();
 }
 
 void BytecodeEmitter::rawDumpBytecode()
@@ -59,6 +62,61 @@ void BytecodeEmitter::emitCallToMain()
 
 	// right now, main has 0 args, but eventually command line args will be added and this will have to change
 	emit8(0);
+}
+
+void BytecodeEmitter::emitIndirectAddress(ASTExpr* base)
+{
+	// arrays should just be stored on the VM's stack in contiguous memory, even though a bit wasteful, an array of i8 will have
+	// each entry stored in one slot of the stacks VM of uint64. I can optimize this later if I want to pack smaller types into 1 slot
+	// push index               -> implicit casted to u64
+	// push element size        -> stored as u64
+	// mul u64                  -> multiplies index * elementSize
+	// push base address of arr -> slot array -> uint16 -> cast to uint64 -> emit64(castedBaseAddr)
+	// add u64                  -> adds baseAddress + (index * elementSize), which is what we need to index into the array
+	// need to add dynamic load / store -> LDL_TYPE_IND, LDG_TYPE_IND, STL_TYPE_IND, STG_TYPE_IND, (IND = indirect)
+	// where instead of knowing the slot at compile time, we need to calculate the slot and pop it off the stack
+	std::vector<ASTArrayAccess*> accesses;
+	ASTExpr* curr = base;
+	while (ASTArrayAccess* access = dynamic_cast<ASTArrayAccess*>(ASTUtils::unwrapGroupExpr(curr)))
+	{
+		accesses.push_back(access);
+		curr = access->arrayExpr;
+	}
+
+	LValue baseLValue = ASTUtils::unwrapGroupExpr(accesses.back()->arrayExpr)->getLValue();
+	for (size_t i = 0; i < accesses.size(); i++)
+	{
+		// push index into the stack
+		accesses[i]->indexExpr->accept(*this);
+
+		// push the stride of the elements being stored in the array and multiplt it by the index
+		emit(Opcode::PUSH_U64);
+		emit64(accesses[i]->arrayExpr->typeInfo->slotCountPerElement);
+		emit(Opcode::MUL_U64);
+
+		// accumulate offset of (stride_i * index)
+		if (i != 0)
+			emit(Opcode::ADD_U64);
+	}
+
+	// emit base address after all strides have been accumulated and add total stride to base address
+	// (stride_0 * index) + (stride_1 * index) ... + (stride_n * index) + baseAddr
+	// for parameter indirect access, we need to load the base address that is stored in the symbols slot index
+	// this is because arrays decay to the base address of the array stored in a the local slot within the function
+	if (baseLValue.symbol->isParameter)
+	{
+		emit(Opcode::LDL_U64);
+		emit16(static_cast<uint16_t>(baseLValue.symbol->slotIndex));
+		emit(Opcode::ADD_U64);
+	}
+
+	// for non parameter indirect access, we simply push the symbols slot index directly as the base address
+	else
+	{
+		emit(Opcode::PUSH_U64);
+		emit64(static_cast<uint64_t>(baseLValue.symbol->slotIndex));
+		emit(Opcode::ADD_U64);
+	}
 }
 
 void BytecodeEmitter::emitDefaultValue(TypeKind type)
@@ -141,7 +199,6 @@ void BytecodeEmitter::resolveDeferredFunction(ASTFuncDecl* function)
 	// this is guaranteed to be in the function table at this point, no need to check against nullptr
 	VMFunctionEntry* entry = functionTable.lookupFunctionByName(std::get<std::string>(function->funcIdentifier.value));
 	entry->startAddress = bytecode.size();
-	std::cout << "resolving deferred function for " << entry->name << std::endl;
 
 	function->body->accept(*this);
 }
@@ -153,15 +210,6 @@ void BytecodeEmitter::resolveDeferredCall(DeferredCall& deferredCall)
 	// where the first two 0's are dummy values for the funcIndex, and the last 0 is a dummy value for the arg count
 	
 	VMFunctionEntry* function = functionTable.lookupFunctionByName(deferredCall.call->callee->typeInfo->name);
-	std::cout << "resolving deferred call for function " 
-		<< function->name 
-		<< " func index = " 
-		<< function->funcIndex 
-		<< " arg count = " 
-		<< function->argCount 
-		<< " start address = "
-		<< function->startAddress
-		<< std::endl;
 	insert16(function->funcIndex, deferredCall.callAddress);
 	insert8(function->argCount, deferredCall.callAddress + 2);
 }
@@ -669,6 +717,85 @@ Opcode BytecodeEmitter::getTypeSpecificLoadGlobalOpcode(TypeKind type)
 	}
 }
 
+Opcode BytecodeEmitter::getTypeSpecificLoadLocalIndOpcode(TypeKind type)
+{
+	std::cout << "load local ind type = " << DebugUtils::typeKindToString(type) << std::endl;
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::LDL_IND_I8;
+		case TypeKind::i16:  return Opcode::LDL_IND_I16;
+		case TypeKind::i32:  return Opcode::LDL_IND_I32;
+		case TypeKind::i64:  return Opcode::LDL_IND_I64;
+		case TypeKind::u8:   return Opcode::LDL_IND_U8;
+		case TypeKind::u16:  return Opcode::LDL_IND_U16;
+		case TypeKind::u32:  return Opcode::LDL_IND_U32;
+		case TypeKind::u64:  return Opcode::LDL_IND_U64;
+		case TypeKind::f32:  return Opcode::LDL_IND_F32;
+		case TypeKind::f64:  return Opcode::LDL_IND_F64;
+		case TypeKind::Char: return Opcode::LDL_IND_CHAR;
+		case TypeKind::Bool: return Opcode::LDL_IND_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificLoadGlobalIndOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::LDG_IND_I8;
+		case TypeKind::i16:  return Opcode::LDG_IND_I16;
+		case TypeKind::i32:  return Opcode::LDG_IND_I32;
+		case TypeKind::i64:  return Opcode::LDG_IND_I64;
+		case TypeKind::u8:   return Opcode::LDG_IND_U8;
+		case TypeKind::u16:  return Opcode::LDG_IND_U16;
+		case TypeKind::u32:  return Opcode::LDG_IND_U32;
+		case TypeKind::u64:  return Opcode::LDG_IND_U64;
+		case TypeKind::f32:  return Opcode::LDG_IND_F32;
+		case TypeKind::f64:  return Opcode::LDG_IND_F64;
+		case TypeKind::Char: return Opcode::LDG_IND_CHAR;
+		case TypeKind::Bool: return Opcode::LDG_IND_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificStoreLocalIndOpcode(TypeKind type)
+{
+	std::cout << "emitting type specpeifc store local ind for type: " << DebugUtils::typeKindToString(type);
+
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::STL_IND_I8;
+		case TypeKind::i16:  return Opcode::STL_IND_I16;
+		case TypeKind::i32:  return Opcode::STL_IND_I32;
+		case TypeKind::i64:  return Opcode::STL_IND_I64;
+		case TypeKind::u8:   return Opcode::STL_IND_U8;
+		case TypeKind::u16:  return Opcode::STL_IND_U16;
+		case TypeKind::u32:  return Opcode::STL_IND_U32;
+		case TypeKind::u64:  return Opcode::STL_IND_U64;
+		case TypeKind::f32:  return Opcode::STL_IND_F32;
+		case TypeKind::f64:  return Opcode::STL_IND_F64;
+		case TypeKind::Char: return Opcode::STL_IND_CHAR;
+		case TypeKind::Bool: return Opcode::STL_IND_BOOL;
+	}
+}
+
+Opcode BytecodeEmitter::getTypeSpecificStoreGlobalIndOpcode(TypeKind type)
+{
+	switch (type)
+	{
+		case TypeKind::i8:   return Opcode::STG_IND_I8;
+		case TypeKind::i16:  return Opcode::STG_IND_I16;
+		case TypeKind::i32:  return Opcode::STG_IND_I32;
+		case TypeKind::i64:  return Opcode::STG_IND_I64;
+		case TypeKind::u8:   return Opcode::STG_IND_U8;
+		case TypeKind::u16:  return Opcode::STG_IND_U16;
+		case TypeKind::u32:  return Opcode::STG_IND_U32;
+		case TypeKind::u64:  return Opcode::STG_IND_U64;
+		case TypeKind::f32:  return Opcode::STG_IND_F32;
+		case TypeKind::f64:  return Opcode::STG_IND_F64;
+		case TypeKind::Char: return Opcode::STG_IND_CHAR;
+		case TypeKind::Bool: return Opcode::STG_IND_BOOL;
+	}
+}
+
 Opcode BytecodeEmitter::getTypeSpecificIncOpcode(TypeKind type)
 {
 	switch (type)
@@ -827,10 +954,15 @@ void BytecodeEmitter::visitVarDecl(ASTVarDecl& node)
 	else
 		emitDefaultValue(type);
 
-	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+	// only emit default initialization for primitive types right now
+	// in the future, will need to support array initializations and struct default values
+	if (SemanticUtils::typeIsPrimitive(node.typeInfo->type))
+	{
+		emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
 
-	// push the slot index to store the variable in
-	emit16(static_cast<uint16_t>(node.slotIndex));
+		// push the slot index to store the variable in
+		emit16(static_cast<uint16_t>(node.slotIndex));
+	}
 }
 
 void BytecodeEmitter::visitFuncDecl(ASTFuncDecl& node)
@@ -846,12 +978,25 @@ void BytecodeEmitter::visitFuncDecl(ASTFuncDecl& node)
 void BytecodeEmitter::visitIdentifier(ASTIdentifier& node)
 {
 	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
-	emit(node.scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
+	
+	LValue lValue = ASTUtils::unwrapGroupExpr(&node)->getLValue();
+	std::cout << "\"" << std::get<std::string>(node.identifier.value) << "\" has type " << DebugUtils::typeKindToString(node.typeInfo->type) << std::endl;
 
-	// push the slot index to store the variable in
-	emit16(static_cast<uint16_t>(node.slotIndex));
+	// if the type is an array, we just push the base address of the array onto the stack
+	if (node.typeInfo->type == TypeKind::Array)
+	{
+		std::cout << "PUSHING Base address of array : " << node.symbol->slotIndex << std::endl;
+		emit(Opcode::PUSH_U64);
+		emit64(static_cast<uint64_t>(node.symbol->slotIndex));
+	}
+	else
+	{
+		// push the slot index to store the variable in and the correct scope level opcode
+		emit(node.symbol->scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
+		emit16(static_cast<uint16_t>(node.symbol->slotIndex));
+	}
 
-	if (node.scope == 0)
+	if (node.symbol->scope == 0)
 		std::cout << "Emitter loading global variable \"" << node.typeInfo->name << "\"\n";
 	else
 		std::cout << "Emitter loading local variable \"" << node.typeInfo->name << "\"\n";
@@ -864,7 +1009,7 @@ void BytecodeEmitter::visitExprStmt(ASTExprStmt& node)
 
 void BytecodeEmitter::visitAssign(ASTAssign& node)
 {
-	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
+	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.assignee->typeInfo->type;
 	
 	// simple assigns:
 	// PUSH value
@@ -879,9 +1024,8 @@ void BytecodeEmitter::visitAssign(ASTAssign& node)
 	// for compound assignment operators, we need to load the variable before pushing the value we're assigning
 	if (node.op.type != TokenType::Assign)
 	{
-		
-		emit(node.scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
-		emit16(static_cast<uint16_t>(node.slotIndex));
+		emit(node.symbol->scope == 0 ? getTypeSpecificLoadGlobalOpcode(type) : getTypeSpecificLoadLocalOpcode(type));
+		emit16(static_cast<uint16_t>(node.symbol->slotIndex));
 	}
 
 	// push the value we're assigning onto the stack
@@ -920,8 +1064,21 @@ void BytecodeEmitter::visitAssign(ASTAssign& node)
 			break;
 	}
 
-	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
-	emit16(static_cast<uint16_t>(node.slotIndex));
+	LValue lValue = ASTUtils::unwrapGroupExpr(node.assignee)->getLValue();
+
+	// for indirect assignments, we need to calculate the address at runtime, then emit an indirect store instruction
+	if (lValue.kind == LValueKind::Indirect)
+	{
+		emitIndirectAddress(node.assignee);
+		emit(lValue.symbol->scope == 0 ? getTypeSpecificStoreGlobalIndOpcode(type) : getTypeSpecificStoreLocalIndOpcode(type));
+	}
+	
+	// if its not an indirect assignment, then we know the slot index at compile time and can directly emit it into the bytecode
+	else
+	{
+		emit(node.symbol->scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+		emit16(static_cast<uint16_t>(node.symbol->slotIndex));
+	}
 }
 
 void BytecodeEmitter::visitReturn(ASTReturn& node)
@@ -1177,17 +1334,33 @@ void BytecodeEmitter::visitUnaryExpr(ASTUnaryExpr& node)
 	switch (node.op.type)
 	{
 		case TokenType::Increment:
+		{
+			LValue lValue = ASTUtils::unwrapGroupExpr(node.expr)->getLValue();
 			emit(getTypeSpecificIncOpcode(type));
 			emit(Opcode::DUP);
-			emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
-			emit16(static_cast<uint16_t>(node.slotIndex));
+
+			if (lValue.kind == LValueKind::Slot)
+			{
+				emit(lValue.symbol->scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+				emit16(static_cast<uint16_t>(lValue.symbol->slotIndex));
+			}
+
 			break;
+		}
 		case TokenType::Decrement:
+		{
+			LValue lValue = ASTUtils::unwrapGroupExpr(node.expr)->getLValue();
 			emit(getTypeSpecificDecOpcode(type));
 			emit(Opcode::DUP);
-			emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
-			emit16(static_cast<uint16_t>(node.slotIndex));
+
+			if (lValue.kind == LValueKind::Slot)
+			{
+				emit(lValue.symbol->scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+				emit16(static_cast<uint16_t>(lValue.symbol->slotIndex));
+			}
+
 			break;
+		}
 		case TokenType::LogicalNot:
 			emit(Opcode::LOGICAL_NOT);
 			break;
@@ -1259,14 +1432,22 @@ void BytecodeEmitter::visitPostfix(ASTPostfix& node)
 		emit(getTypeSpecificDecOpcode(type));
 	}
 
+	LValue lValue = ASTUtils::unwrapGroupExpr(node.expr)->getLValue();
 	// have to output store instruction AND the variables slot, forgetting to emit the slot was the cause of a nasty bug
-	emit(node.scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
-	emit16(static_cast<uint16_t>(node.slotIndex));
+	// need to do other logic for array accesses I think, lValue would hold LValueKind::Indirect in that case
+	if (lValue.kind == LValueKind::Slot)
+	{
+		emit(lValue.symbol->scope == 0 ? getTypeSpecificStoreGlobalOpcode(type) : getTypeSpecificStoreLocalOpcode(type));
+		emit16(static_cast<uint16_t>(lValue.symbol->slotIndex));
+	}
+
 }
 
 void BytecodeEmitter::visitArgument(ASTArgument& node)
 {
+	std::cout << "VISITING ARGUMENT\n\n";
 	node.value->accept(*this);
+	std::cout << "AFTER VISITING ARGUMENT\n\n";
 }
 
 void BytecodeEmitter::visitArgList(ASTArgList& node)
@@ -1280,4 +1461,17 @@ void BytecodeEmitter::visitCast(ASTCast& node)
 	implicitCastCtx = node.typeInfo;
 	node.expr->accept(*this);
 	implicitCastCtx = nullptr;
+}
+
+void BytecodeEmitter::visitArrayAccess(ASTArrayAccess& node)
+{
+	TypeKind type = implicitCastCtx ? implicitCastCtx->type : node.typeInfo->type;
+
+	// emit code for calculating the indirect address of the array access and leave it on the stack
+	emitIndirectAddress(&node);
+	LValue baseLValue = ASTUtils::unwrapGroupExpr(node.arrayExpr)->getLValue();
+
+	// emit type specific load / store / global / local opcode if the base type is primitive, if not, just leave the computed address on the stack
+	if (SemanticUtils::typeIsPrimitive(node.typeInfo->type))
+		emit(baseLValue.symbol->scope == 0 ? getTypeSpecificLoadGlobalIndOpcode(type) : getTypeSpecificLoadLocalIndOpcode(type));
 }

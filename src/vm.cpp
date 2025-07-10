@@ -305,6 +305,58 @@ void VM::fillOpcodeTable()
 	opcodeTable[static_cast<size_t>(Opcode::SHR_U16)] = &VM::SHR_U16;
 	opcodeTable[static_cast<size_t>(Opcode::SHR_U32)] = &VM::SHR_U32;
 	opcodeTable[static_cast<size_t>(Opcode::SHR_U64)] = &VM::SHR_U64;
+
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_I8)] = &VM::LDL_IND_I8;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_I16)] = &VM::LDL_IND_I16;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_I32)] = &VM::LDL_IND_I32;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_I64)] = &VM::LDL_IND_I64;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_U8)] = &VM::LDL_IND_U8;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_U16)] = &VM::LDL_IND_U16;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_U32)] = &VM::LDL_IND_U32;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_U64)] = &VM::LDL_IND_U64;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_F32)] = &VM::LDL_IND_F32;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_F64)] = &VM::LDL_IND_F64;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_CHAR)] = &VM::LDL_IND_CHAR;
+	opcodeTable[static_cast<size_t>(Opcode::LDL_IND_BOOL)] = &VM::LDL_IND_BOOL;
+
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_I8)] = &VM::LDG_IND_I8;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_I16)] = &VM::LDG_IND_I16;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_I32)] = &VM::LDG_IND_I32;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_I64)] = &VM::LDG_IND_I64;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_U8)] = &VM::LDG_IND_U8;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_U16)] = &VM::LDG_IND_U16;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_U32)] = &VM::LDG_IND_U32;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_U64)] = &VM::LDG_IND_U64;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_F32)] = &VM::LDG_IND_F32;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_F64)] = &VM::LDG_IND_F64;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_CHAR)] = &VM::LDG_IND_CHAR;
+	opcodeTable[static_cast<size_t>(Opcode::LDG_IND_BOOL)] = &VM::LDG_IND_BOOL;
+
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_I8)] = &VM::STL_IND_I8;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_I16)] = &VM::STL_IND_I16;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_I32)] = &VM::STL_IND_I32;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_I64)] = &VM::STL_IND_I64;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_U8)] = &VM::STL_IND_U8;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_U16)] = &VM::STL_IND_U16;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_U32)] = &VM::STL_IND_U32;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_U64)] = &VM::STL_IND_U64;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_F32)] = &VM::STL_IND_F32;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_F64)] = &VM::STL_IND_F64;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_CHAR)] = &VM::STL_IND_CHAR;
+	opcodeTable[static_cast<size_t>(Opcode::STL_IND_BOOL)] = &VM::STL_IND_BOOL;
+
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_I8)] = &VM::STG_IND_I8;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_I16)] = &VM::STG_IND_I16;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_I32)] = &VM::STG_IND_I32;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_I64)] = &VM::STG_IND_I64;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_U8)] = &VM::STG_IND_U8;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_U16)] = &VM::STG_IND_U16;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_U32)] = &VM::STG_IND_U32;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_U64)] = &VM::STG_IND_U64;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_F32)] = &VM::STG_IND_F32;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_F64)] = &VM::STG_IND_F64;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_CHAR)] = &VM::STG_IND_CHAR;
+	opcodeTable[static_cast<size_t>(Opcode::STG_IND_BOOL)] = &VM::STG_IND_BOOL;
 }
 
 uint8_t VM::read8()
@@ -412,6 +464,26 @@ void VM::storeGlobal(uint16_t slot, uint64_t value)
 {
 	std::cout << "[Storing Global] slot: " << slot << " value: " << value << std::endl;
 	globals[slot] = value;
+}
+
+uint64_t VM::loadGlobalInd(uint64_t addr)
+{
+	return globals[addr];
+}
+
+void VM::storeGlobalInd(uint64_t addr, uint64_t value)
+{
+	globals[addr] = value;
+}
+
+uint64_t VM::loadLocalInd(uint64_t addr)
+{
+	return stack[addr];
+}
+
+void VM::storeLocalInd(uint64_t addr, uint64_t value)
+{
+	stack[addr] = value;
 }
 
 void VM::pushStackFrame(size_t basePointer, size_t returnAddress, size_t retSP)
@@ -923,6 +995,7 @@ void VM::CALL()
 	// pushed onto the stack, so the base is just whatever sp is - the number of args
 	pushStackFrame(sp - static_cast<size_t>(argCount), ip, sp - static_cast<size_t>(argCount));
 	VMFunctionEntry& function = functionTable->getFunctionByIndex(funcIndex);
+
 	// set the current sp to begin after the function parameters so we don't override them with PUSH / POP calls
 	sp = callStack.back().basePointer + static_cast<size_t>(function.localsCount);
 	std::cout << "after pushing stack frame, new sp = " << sp << std::endl;
@@ -2309,6 +2382,261 @@ void VM::SHR_U32()
 }
 
 void VM::SHR_U64()
+{
+
+}
+
+void VM::LDL_IND_I8()
+{
+
+}
+
+void VM::LDL_IND_I16()
+{
+
+}
+
+void VM::LDL_IND_I32()
+{
+	uint64_t address = POP();
+	int32_t value = static_cast<int32_t>(loadLocalInd(address));
+	int64_t signExtended = static_cast<int64_t>(value);
+
+	PUSH(static_cast<uint64_t>(signExtended));
+}
+
+void VM::LDL_IND_I64()
+{
+
+}
+
+void VM::LDL_IND_U8()
+{
+
+}
+
+void VM::LDL_IND_U16()
+{
+
+}
+
+void VM::LDL_IND_U32()
+{
+
+}
+
+void VM::LDL_IND_U64()
+{
+
+}
+
+void VM::LDL_IND_F32()
+{
+
+}
+
+void VM::LDL_IND_F64()
+{
+
+}
+
+void VM::LDL_IND_CHAR()
+{
+
+}
+
+void VM::LDL_IND_BOOL()
+{
+
+}
+
+void VM::LDG_IND_I8()
+{
+
+}
+
+void VM::LDG_IND_I16()
+{
+
+}
+
+void VM::LDG_IND_I32()
+{
+
+}
+
+void VM::LDG_IND_I64()
+{
+
+}
+
+void VM::LDG_IND_U8()
+{
+
+}
+
+void VM::LDG_IND_U16()
+{
+
+}
+
+void VM::LDG_IND_U32()
+{
+
+}
+
+void VM::LDG_IND_U64()
+{
+
+}
+
+void VM::LDG_IND_F32()
+{
+
+}
+
+void VM::LDG_IND_F64()
+{
+
+}
+
+void VM::LDG_IND_CHAR()
+{
+
+}
+
+void VM::LDG_IND_BOOL()
+{
+
+}
+
+void VM::STL_IND_I8()
+{
+
+}
+
+void VM::STL_IND_I16()
+{
+
+}
+
+void VM::STL_IND_I32()
+{
+	/*int32_t value = static_cast<int32_t>(POP());
+	int64_t signExtended = static_cast<int64_t>(value);
+	uint16_t slot = read16();
+
+	storeLocal(slot, static_cast<uint64_t>(signExtended));*/
+
+	uint64_t addr = POP();
+	int32_t val = static_cast<int32_t>(POP());
+	int64_t signExtended = static_cast<int64_t>(val);
+
+	storeLocal(addr, static_cast<uint64_t>(signExtended));
+
+}
+
+void VM::STL_IND_I64()
+{
+
+}
+
+void VM::STL_IND_U8()
+{
+
+}
+
+void VM::STL_IND_U16()
+{
+
+}
+
+void VM::STL_IND_U32()
+{
+
+}
+
+void VM::STL_IND_U64()
+{
+
+}
+
+void VM::STL_IND_F32()
+{
+
+}
+
+void VM::STL_IND_F64()
+{
+
+}
+
+void VM::STL_IND_CHAR()
+{
+
+}
+
+void VM::STL_IND_BOOL()
+{
+
+}
+
+void VM::STG_IND_I8()
+{
+
+}
+
+void VM::STG_IND_I16()
+{
+
+}
+
+void VM::STG_IND_I32()
+{
+
+}
+
+void VM::STG_IND_I64()
+{
+
+}
+
+void VM::STG_IND_U8()
+{
+
+}
+
+void VM::STG_IND_U16()
+{
+
+}
+
+void VM::STG_IND_U32()
+{
+
+}
+
+void VM::STG_IND_U64()
+{
+
+}
+
+void VM::STG_IND_F32()
+{
+
+}
+
+void VM::STG_IND_F64()
+{
+
+}
+
+void VM::STG_IND_CHAR()
+{
+
+}
+
+void VM::STG_IND_BOOL()
 {
 
 }

@@ -1,6 +1,8 @@
 #include "semantic_analysis.h"
 #include "debug_utils.h"
 #include "semantic_utils.h"
+#include "ast_type.h"
+#include "constant_evaluator.h"
 
 #include <iostream>
 #include <limits>
@@ -46,6 +48,75 @@ void SemanticAnalysis::checkForMainFunction()
 		return;
 	}
 }
+
+//uint64_t SemanticAnalysis::calculateElementSizeInBytes(TypeInfo* elementType)
+//{
+//	uint64_t size = 0;
+//	
+//	switch (elementType->type)
+//	{
+//		case TypeKind::i8:
+//		case TypeKind::u8:
+//		case TypeKind::Char:
+//		case TypeKind::Bool:
+//			return 1;
+//		case TypeKind::i16:
+//		case TypeKind::u16:
+//			return 2;
+//		case TypeKind::i32:
+//		case TypeKind::u32:
+//		case TypeKind::f32:
+//			return 4;
+//		case TypeKind::i64:
+//		case TypeKind::u64:
+//		case TypeKind::f64:
+//			return 8;
+//		case TypeKind::Array:
+//			return elementType->arrayLength * calculateElementSizeInBytes(elementType->elementType);
+//	}
+//}
+//
+//void SemanticAnalysis::visitASTType(ASTNode& rootNode, TypeInfo* typeInfo, ASTType* type)
+//{
+//
+//	switch (type->astType)
+//	{
+//	case ASTTypeKind::Primitive:
+//	{
+//		ASTPrimitiveType* primitive = static_cast<ASTPrimitiveType*>(type);
+//		typeInfo->type = SemanticUtils::getTypeFromToken(primitive->primitiveType);
+//		break;
+//	}
+//	case ASTTypeKind::Array:
+//	{
+//		typeInfo->type = TypeKind::Array;
+//		ASTArrayType* arr = static_cast<ASTArrayType*>(type);
+//		arr->size->accept(*this);
+//
+//		typeInfo->elementType = typeArena->alloc<TypeInfo>();
+//		visitASTType(rootNode, typeInfo->elementType, arr->elementType);
+//
+//		// TODO: calculate the element size of what the array is holding
+//		ConstantEvaluator evaluator;
+//		evaluator.eval(arr->size);
+//
+//		if (evaluator.constant.valid && evaluator.constant.value > 0)
+//			typeInfo->arrayLength = static_cast<size_t>(evaluator.constant.value);
+//		else
+//			diagnosticReporter->reportDiagnostic("invalid array size, must be positive compile time constant", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, rootNode.line, rootNode.col);
+//
+//		typeInfo->elementSize = calculateElementSizeInBytes(typeInfo->elementType);
+//		break;
+//	}
+//
+//	case ASTTypeKind::Struct:
+//		break;
+//	case ASTTypeKind::Pointer:
+//		break;
+//	case ASTTypeKind::Function:
+//		break;
+//	}
+//}
 
 void SemanticAnalysis::analyze(std::vector<ASTNode*>& ast, MemoryArena* typeArena, DiagnosticReporter* diagnosticReporter, Environment* env)
 {
@@ -104,6 +175,8 @@ void SemanticAnalysis::visitVarDecl(ASTVarDecl& node)
 	// if the node has an initialization, visit it and collect type data on it, type data for this var decl node was collected during symbol resolution
 	if (node.initialization)
 		node.initialization->accept(*this);
+
+	//visitASTType(node, node.typeInfo, node.type);
 }
 
 void SemanticAnalysis::visitFuncDecl(ASTFuncDecl& node)
@@ -144,8 +217,7 @@ void SemanticAnalysis::visitIdentifier(ASTIdentifier& node)
 	} 
 
 	node.typeInfo = symbol->typeInfo;
-	node.slotIndex = symbol->slotIndex;
-	node.scope = symbol->scope;
+	node.symbol = symbol;
 }
 
 void SemanticAnalysis::visitExprStmt(ASTExprStmt& node)
@@ -157,7 +229,8 @@ void SemanticAnalysis::visitAssign(ASTAssign& node)
 {
 	node.assignee->accept(*this);
 	node.typeInfo = node.assignee->typeInfo;
-	std::string identifier = node.typeInfo->name;
+	//std::string identifier = node.typeInfo->name;
+	std::string identifier = node.assignee->getLValueIdentifier();
 	Symbol* symbol = env->findSymbol(identifier);
 
 	if (!symbol)
@@ -171,8 +244,7 @@ void SemanticAnalysis::visitAssign(ASTAssign& node)
 
 	node.value->accept(*this);
 	node.typeInfo = symbol->typeInfo;
-	node.slotIndex = symbol->slotIndex;
-	node.scope = symbol->scope;
+	node.symbol = symbol;
 }
 
 void SemanticAnalysis::visitReturn(ASTReturn& node)
@@ -263,7 +335,7 @@ void SemanticAnalysis::visitUnaryExpr(ASTUnaryExpr& node)
 {
 	node.expr->accept(*this);
 	node.typeInfo = typeArena->alloc<TypeInfo>();
-	node.typeInfo->type = TypeKind::Unknown;
+	node.typeInfo->type = node.expr->typeInfo->type;
 }
 
 void SemanticAnalysis::visitCall(ASTCall& node)
@@ -294,7 +366,7 @@ void SemanticAnalysis::visitPostfix(ASTPostfix& node)
 {
 	node.expr->accept(*this);
 	node.typeInfo = typeArena->alloc<TypeInfo>();
-	node.typeInfo->type = TypeKind::Unknown;
+	node.typeInfo->type = node.expr->typeInfo->type;
 }
 
 void SemanticAnalysis::visitParameter(ASTParameter& node)
@@ -319,9 +391,6 @@ void SemanticAnalysis::visitArgList(ASTArgList& node)
 	// we also need to make sure the type of each arg corresponds to the type of each expected parameter
 	if (functionCtxStack.size() > 0)
 	{
-		if (!functionCtxStack.back())
-			std::cout << "BACK OF FUNCTION CTX IS NULLPTR\n";
-		std::cout << "visiting arg list, paramTypes.size = " << functionCtxStack.back()->paramTypes.size();
 		if (node.args.size() != functionCtxStack.back()->paramTypes.size())
 		{
 			std::string message = "mismatched function argument count, expected ";
@@ -342,4 +411,37 @@ void SemanticAnalysis::visitArgList(ASTArgList& node)
 			//node.args[i]->typeInfo->type = functionCtxStack.back()->paramTypes[i]->type;
 		}
 	}
+}
+
+void SemanticAnalysis::visitArrayAccess(ASTArrayAccess& node)
+{
+	node.arrayExpr->accept(*this);
+	node.indexExpr->accept(*this);
+	
+	// arguably, we could even allow Pointer types to be valid here, and i probably should, but I can come back to this when pointers are added
+	if (node.arrayExpr->typeInfo->type != TypeKind::Array)
+	{
+		node.typeInfo = typeArena->alloc<TypeInfo>();
+		diagnosticReporter->reportDiagnostic("cannot index non array expression", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, node.line, node.col);
+		node.typeInfo->type = TypeKind::Unknown;
+		return;
+	}
+
+	if (!SemanticUtils::isInteger(node.indexExpr->typeInfo->type))
+	{
+		std::cout << DebugUtils::typeKindToString(node.indexExpr->typeInfo->type);
+		node.typeInfo = typeArena->alloc<TypeInfo>();
+		diagnosticReporter->reportDiagnostic("index expression must be integer type", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, node.line, node.col);
+		node.typeInfo->type = TypeKind::Unknown;
+		return;
+	}
+
+	ConstantEvaluator evaluator;
+	evaluator.eval(node.indexExpr);
+	if (evaluator.constant.valid && evaluator.constant.value < 0)
+		diagnosticReporter->reportDiagnostic("index must be positive integer, ", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, node.line, node.col);
+	else if (evaluator.constant.valid && evaluator.constant.value >= node.arrayExpr->typeInfo->arrayLength)
+		diagnosticReporter->reportDiagnostic("index out of bounds, ", DiagnosticLevel::Error, DiagnosticType::IncompatibleType, ErrorPhase::Semantic, node.line, node.col);
+
+	node.typeInfo = node.arrayExpr->typeInfo->elementType;
 }

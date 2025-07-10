@@ -1,11 +1,19 @@
 #pragma once
 
 #include "ast_node.h"
+#include "l_value.h"
+
+struct Symbol;
 
 class ASTExpr : public ASTNode
 {
 public:
 	TypeInfo* typeInfo;
+
+	// those booleans below should also become virtual methods
+	virtual bool isLValue() const {  return false; }
+	virtual LValue getLValue() const { return LValue{}; }
+	virtual std::string getLValueIdentifier() const { return ""; }
 
 	// defeats the purpose of inheritance + dispatch calls, but I need to know what types of nodes some expressions are
 	// while doing things, so these are going here to avoid dynamic casts
@@ -70,9 +78,12 @@ public:
 	void accept(ASTPrinter visitor, uint32_t depth);
 	void accept(ASTVisitor& visitor);
 
+	bool isLValue() const override {  return true; }
+	std::string getLValueIdentifier() const override { return std::get<std::string>(identifier.value); }
+	LValue getLValue() const override;
+
 	Token identifier;
-	int scope;
-	int slotIndex;
+	Symbol* symbol;
 };
 
 class ASTAssign : public ASTExpr
@@ -88,8 +99,7 @@ public:
 	Token op;
 	ASTExpr* value;
 
-	int scope;
-	int slotIndex;
+	Symbol* symbol;
 };
 
 class ASTLogical : public ASTExpr
@@ -131,10 +141,6 @@ public:
 
 	Token op;
 	ASTExpr* expr;
-
-	// only applicable when the UnaryExpr is something like ++x or --x
-	int slotIndex;	
-	int scope;
 };
 
 class ASTCall : public ASTExpr
@@ -173,11 +179,6 @@ public:
 
 	ASTExpr* expr;
 	Token op;
-
-	// will need to add more when array access is a thing, and pointers, structs, etc. 
-	// This field can prob just become an LValue struct from l_value.h
-	int slotIndex;
-	int scope;
 };
 
 class ASTArgument : public ASTExpr
@@ -201,4 +202,20 @@ public:
 	void accept(ASTVisitor& visitor);
 
 	ASTExpr* expr;
+};
+
+class ASTArrayAccess : public ASTExpr
+{
+public:
+	ASTArrayAccess(ASTExpr* arrayExpr, ASTExpr* indexExpr);
+	bool operator==(const ASTNode& other) const;
+	void accept(ASTPrinter visitor, uint32_t depth);
+	void accept(ASTVisitor& visitor);
+
+	bool isLValue() const override { return true; }
+	std::string getLValueIdentifier() const { return arrayExpr->getLValueIdentifier(); }
+	LValue getLValue() const override;
+
+	ASTExpr* arrayExpr;	// the expr that results in an array E.G arr, foo(), vec.arr, etc.
+	ASTExpr* indexExpr; // the actual index expression, [1], [x], [foo()], etc
 };

@@ -50,6 +50,7 @@ private:
 
 	ASTExpr* parseFuncArgs(ASTExpr* callee);
 	ASTParamList* parseFuncParams();
+	ASTType* parseASTType();
 
 	void assertCurrent(TokenType type, const std::string& errorMsg);	// assert the top token matches 'type', otherwise report a syntax error
 	void assertCurrentIsType(const std::string& errorMsg);

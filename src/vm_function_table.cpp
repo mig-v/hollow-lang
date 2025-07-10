@@ -11,7 +11,6 @@ VMFunctionTable::VMFunctionTable()
 void VMFunctionTable::addFunction(const std::string& name, uint8_t argCount, size_t startAddress, uint16_t localsCount)
 {
 	functionRegistry.emplace_back(VMFunctionEntry{ name, nextIndex++, argCount, startAddress, localsCount });
-	std::cout << "adding function " << name << "to VMFunctionTable, locals count = " << static_cast<uint32_t>(localsCount) << std::endl;
 }
 
 VMFunctionEntry* VMFunctionTable::lookupFunctionByName(const std::string& name)

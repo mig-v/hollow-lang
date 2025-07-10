@@ -16,6 +16,7 @@ struct Symbol
 	int scope;
 	int slotIndex;
 	TypeInfo* typeInfo;
+	bool isParameter;
 };
 
 class SymbolTable
@@ -34,6 +35,8 @@ public:
 	Symbol* getSymbol(const std::string& identifier);
 
 private:
+	int getSlotCountForType(TypeInfo* typeInfo);
+
 	std::unordered_map<std::string, Symbol> symbols;
 	int nextSlot;
 	int parentScopeSlotOffset;

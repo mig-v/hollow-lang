@@ -85,6 +85,8 @@ void BytecodeEmitterTests::runAll()
 	for (auto const& [key, val] : testSuite)
 		runSpecific(key);
 
+	std::cout << std::endl;
+
 	logFile.close();
 }
 

@@ -34,24 +34,5 @@ public:
 	virtual void visitParamList(ASTParamList& node) {}
 	virtual void visitArgList(ASTArgList& node) {}
 	virtual void visitCast(ASTCast& node) {}
-
-
-
-	//void visitFuncDecl(ASTFuncDecl& node) override;
-	//void visitVarDecl(ASTVarDecl& node) override;
-	//void visitIdentifier(ASTIdentifier& node) override;  // identifier references MUST be resolved when they're encountered, this is unlike functions
-	//void visitBlock(ASTBlock& node) override;
-	//void visitForLoop(ASTForLoop& node) override;
-	//void visitParamList(ASTParamList& node) override;
-	//void visitParameter(ASTParameter& node) override;
-	//void visitWhileLoop(ASTWhileLoop& node) override;
-	//void visitIfStatement(ASTIfStatement& node) override;
-	//void visitCall(ASTCall& node) override;
-	//void visitBinaryExpr(ASTBinaryExpr& node) override;
-	//void visitExprStmt(ASTExprStmt& node) override;
-	//void visitPostfix(ASTPostfix& node) override;
-	//void visitUnaryExpr(ASTUnaryExpr& node) override;
-	//void visitGroupExpr(ASTGroupExpr& node) override;
-	//void visitArgList(ASTArgList& node) override;
-	//void visitArgument(ASTArgument& node) override;
+	virtual void visitArrayAccess(ASTArrayAccess& node) {}
 };

@@ -1,10 +1,23 @@
+globalArray : i32[10];
 
+func testArray(param : i32[5]) : i32
+{
+    return param[3 + 1] + 6;
+}
 
 func main() : i32
 {
+    x : i32;
+    arr : i32[5];
 
-   if ((false || false) && (true || false)) {10;}
-    else {20;}
+    arr[0] = 5;
+    arr[1] = 10;
+    arr[2] = 15;
+    arr[3] = 20;
+    arr[4] = 25;
 
-    return 0;
+
+    //globalArray[0] = 2;
+
+    return testArray(arr);
 }

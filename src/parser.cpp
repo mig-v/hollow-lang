@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "ast_printer.h"
 #include "debug_utils.h"
+#include "ast_type.h"
 
 #include <iostream>
 
@@ -66,14 +67,64 @@ ASTStmt* Parser::declaration()
 	}
 }
 
+ASTType* Parser::parseASTType()
+{
+	ASTType* base = nullptr;
+
+	// first, base can be a primitive or struct type
+	if (tokenStream.topIsPrimitive())
+	{
+		// consume the primitive type
+		Token varType = tokenStream.consume();
+		base = arena->alloc<ASTPrimitiveType>(varType.type);
+	}
+
+	// if the top token is not a primitive, we can assume it's a struct type
+	else
+	{
+		// consume the struct type
+		//Token varType = tokenStream.consume();
+		//base = arena->alloc<ASTStructType>(varType.type);
+	}
+
+	// after parsing the base type, we can have an arbitrary number of "*" and "[]" tokens, but first parse repeat "*" symbols
+	// to handle things like double pointers, or an array of double pointers, etc.
+	// Becase we can have things like arr : i32** [], but not arr :i32[]**, this will also work for arr : Vec2** []
+
+	// parse repeat pointer symbols
+	while (tokenStream.peek(TokenType::Asterisk))
+	{
+		// consume the "*" token
+		//tokenStream.consume();
+		//base = arena->alloc<ASTPointerType>(base);
+	}
+
+	// lastly, parse repeat array [] symbols
+	while (tokenStream.peek(TokenType::OpenBracket))
+	{
+		// consume the "[" token
+		tokenStream.consume();
+		ASTExpr* size = expression();
+		assertCurrent(TokenType::CloseBracket, "Expect \"]\" after array size");
+		base = arena->alloc<ASTArrayType>(base, size);
+	}
+
+	return base;
+}
+
 ASTStmt* Parser::varDecl()
 {
 	Token start = tokenStream.get();
 	Token identifier = tokenStream.consume();	// get the identifier
 	tokenStream.consume();						// consume the ":" token
-	Token varType = tokenStream.consume();		// get the type of the variable
+
+	// get the type of the variable
+	ASTType* astType = parseASTType();
 	
 	ASTExpr* varInitialization = nullptr;
+
+	// TODO: parse TokenType::Assign here for array initializer lists like arr : i32[] = {1, 2, 3, 4};
+	// can check the astType for which kind of initialization to do
 	if (tokenStream.peek(TokenType::Assign))
 	{
 		tokenStream.consume();	// consume the "=" token
@@ -83,7 +134,8 @@ ASTStmt* Parser::varDecl()
 	}
 
 	assertCurrent(TokenType::Semicolon, "Expect ';' after variable declaration");
-	ASTVarDecl* node = arena->alloc<ASTVarDecl>(varType.type, identifier, varInitialization);
+
+	ASTVarDecl* node = arena->alloc<ASTVarDecl>(astType, identifier, varInitialization);
 	node->line = start.lineNum;
 	node->col = start.column;
 	return node;
@@ -284,12 +336,12 @@ ASTExpr* Parser::assignment()
 	{
 		Token assignmentOperator = tokenStream.consume();
 		ASTExpr* value = assignment();
-		ASTIdentifier* assignee = dynamic_cast<ASTIdentifier*>(expression);
+		//ASTIdentifier* assignee = dynamic_cast<ASTIdentifier*>(expression);
 		
 		// if the dynamic cast succeeds, the LHS expanded to a variable and we know we're doing an assignment [x = (expression);]
-		if (assignee)
+		if (expression->isLValue())
 		{
-			ASTAssign* node = arena->alloc<ASTAssign>(assignee, assignmentOperator, value);
+			ASTAssign* node = arena->alloc<ASTAssign>(expression, assignmentOperator, value);
 			node->line = start.lineNum;
 			node->col = start.column;
 			return node;
@@ -510,12 +562,19 @@ ASTExpr* Parser::postfix()
 			expr->line = start.lineNum;
 			expr->col = start.column;
 		}
+		else if (tokenStream.peek(TokenType::OpenBracket))
+		{
+			tokenStream.consume();
+			ASTExpr* indexExpr = expression();
+			assertCurrent(TokenType::CloseBracket, "expect closing \"]\" after index expression");
+			expr = arena->alloc<ASTArrayAccess>(expr, indexExpr);
+			expr->line = start.lineNum;
+			expr->col = start.column;
+		}
 		else
 			break;
 	}
 	
-	//expr->line = start.lineNum;
-	//expr->col = start.column;
 	return expr;
 }
 
@@ -578,10 +637,13 @@ ASTParamList* Parser::parseFuncParams()
 
 		// this will also need to check for user defined types when that is added
 		assertCurrent(TokenType::Colon, "Parameters need to be in the form of identifier : type");
-		assertCurrentIsType("Expect type for function arguments");
-		Token paramType = tokenStream.prev();
 
-		node->params.emplace_back(arena->alloc<ASTParameter>(paramIdentifier, paramType));
+		// get the type of the variable
+		ASTType* astType = parseASTType();
+		//assertCurrentIsType("Expect type for function arguments");
+		//Token paramType = tokenStream.prev();
+
+		node->params.emplace_back(arena->alloc<ASTParameter>(paramIdentifier, astType));
 
 		// same logic as above, just need to consume an additional comma token between parameters
 		while (tokenStream.tokensInStream() && tokenStream.peek(TokenType::Comma))
@@ -591,10 +653,11 @@ ASTParamList* Parser::parseFuncParams()
 			Token paramIdentifier = tokenStream.prev();
 
 			assertCurrent(TokenType::Colon, "Function parameters need to be in the form of identifier : type");
-			assertCurrentIsType("Expect type for function arguments");
-			Token paramType = tokenStream.prev();
+			ASTType* astType = parseASTType();
+			//assertCurrentIsType("Expect type for function arguments");
+			//Token paramType = tokenStream.prev();
 
-			node->params.emplace_back(arena->alloc<ASTParameter>(paramIdentifier, paramType));
+			node->params.emplace_back(arena->alloc<ASTParameter>(paramIdentifier, astType));
 		}
 	}
 

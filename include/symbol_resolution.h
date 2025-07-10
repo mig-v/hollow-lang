@@ -5,6 +5,8 @@
 #include "memory_arena.h"
 #include "diagnostic.h"
 
+class ASTType;
+
 class SymbolResolution : public ASTVisitor
 {
 public:
@@ -33,7 +35,12 @@ public:
 	void visitAssign(ASTAssign& node) override;
 	void visitReturn(ASTReturn& node) override;
 	void visitLogical(ASTLogical& node) override;
+	void visitArrayAccess(ASTArrayAccess& node) override;
 private:
+	uint64_t calculateElementSizeInBytes(TypeInfo* elementType);
+	uint64_t calculateSlotCountForElement(TypeInfo* elementType);
+	void visitASTType(ASTNode& rootNode, TypeInfo* typeInfo, ASTType* type);
+
 	Environment* env;
 	MemoryArena symbolArena;
 	MemoryArena typeArena;

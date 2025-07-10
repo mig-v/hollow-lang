@@ -19,17 +19,6 @@ struct ConditionContext
 	JumpLabel end;		    // end of condition construct, instruction immediately after while loop, if statement, etc.
 };
 
-// used to track each individual logical component of a condition, so if ((A && B) || (C && D)) -> ({LogicalContext} || {LogicalContext})
-// this is because in nested expressions, the logical expressions need to jump to evaluating the next expression in the condition
-// not jump to the actual true / false branch of a condition. That is up to the ConditionContext to handle
-struct LogicalContext
-{
-	JumpLabel trueJump;
-	JumpLabel falseJump;
-	uint16_t endAddress = 0;
-	uint16_t startAddress = 0;
-};
-
 struct DeferredCall
 {
 	ASTCall* call;
@@ -68,6 +57,7 @@ public:
 	void visitArgument(ASTArgument& node) override;
 	void visitArgList(ASTArgList& node) override;
 	void visitCast(ASTCast& node) override;
+	void visitArrayAccess(ASTArrayAccess& node) override;
 
 private:
 	void emit(Opcode opcode);
@@ -83,6 +73,7 @@ private:
 	void resolveDeferredFunction(ASTFuncDecl* function);
 	void resolveDeferredCall(DeferredCall& deferredCall);
 	void emitCallToMain();
+	void emitIndirectAddress(ASTExpr* base);
 
 	void emitShortCircuitOr(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget);
 	void emitShortCircuitAnd(ASTLogical& node, JumpLabel* trueTarget, JumpLabel* falseTarget);
@@ -113,6 +104,10 @@ private:
 	Opcode getTypeSpecificLoadGlobalOpcode(TypeKind type);
 	Opcode getTypeSpecificIncOpcode(TypeKind type);
 	Opcode getTypeSpecificDecOpcode(TypeKind type);
+	Opcode getTypeSpecificLoadLocalIndOpcode(TypeKind type);
+	Opcode getTypeSpecificLoadGlobalIndOpcode(TypeKind type);
+	Opcode getTypeSpecificStoreLocalIndOpcode(TypeKind type);
+	Opcode getTypeSpecificStoreGlobalIndOpcode(TypeKind type);
 
 	TypeInfo* implicitCastCtx;
 	VMFunctionTable functionTable;

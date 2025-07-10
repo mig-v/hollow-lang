@@ -4,9 +4,13 @@
 #include "token.h"
 #include "diagnostic.h"
 
+class ASTType;
+
 namespace SemanticUtils
 {
 	TypeKind getTypeFromToken(TokenType token);
+	TypeKind getTypeFromASTType(ASTType* astType);
+	bool typeIsPrimitive(TypeKind type);
 	bool isComparisonOp(TokenType op);
 	bool isArithmeticOp(TokenType op);
 	bool isBitwiseOp(TokenType op);

@@ -1,5 +1,6 @@
 #include "parser_tests.h"
 #include "ast_printer.h"
+#include "ast_type.h"
 
 #include <iostream>
 
@@ -143,11 +144,11 @@ ParserTests::ParserTests()
 	testSuite[TEST_PATH"/parser_tests/variables_test.hollow"].testname = "variables_test.hollow";
 	testSuite[TEST_PATH"/parser_tests/variables_test.hollow"].expectedAst =
 	{
-		new ASTVarDecl(TokenType::i32Keyword, x, nullptr),
-		new ASTVarDecl(TokenType::f32Keyword, y, new ASTDoubleLiteral(1.0)),
-		new ASTVarDecl(TokenType::boolKeyword, flag, new ASTBoolLiteral(true)),
-		new ASTVarDecl(TokenType::i32Keyword, z, new ASTIntLiteral(1)),
-		new ASTVarDecl(TokenType::boolKeyword, flag2, new ASTBoolLiteral(false)),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), x, nullptr),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::f32Keyword), y, new ASTDoubleLiteral(1.0)),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::boolKeyword), flag, new ASTBoolLiteral(true)),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), z, new ASTIntLiteral(1)),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::boolKeyword), flag2, new ASTBoolLiteral(false)),
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), assign, new ASTIntLiteral(1))),
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), plusEq, new ASTIntLiteral(1))),
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), minusEq, new ASTIntLiteral(1))),
@@ -159,9 +160,9 @@ ParserTests::ParserTests()
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), leftShiftEq, new ASTIntLiteral(1))),
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), rightShiftEq, new ASTIntLiteral(1))),
 		new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), assign, new ASTBinaryExpr(new ASTIdentifier(y), add, new ASTIntLiteral(1)))),
-		new ASTVarDecl(TokenType::i32Keyword, x, new ASTBinaryExpr(new ASTIntLiteral(10), add, new ASTIntLiteral(20))),
-		new ASTVarDecl(TokenType::i32Keyword, y, new ASTBinaryExpr(new ASTGroupExpr(new ASTBinaryExpr(new ASTIntLiteral(5), mul, new ASTIntLiteral(3))), sub, new ASTIntLiteral(1))),
-		new ASTVarDecl(TokenType::boolKeyword, z, new ASTUnaryExpr(logicalNot, new ASTBoolLiteral(false))),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), x, new ASTBinaryExpr(new ASTIntLiteral(10), add, new ASTIntLiteral(20))),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), y, new ASTBinaryExpr(new ASTGroupExpr(new ASTBinaryExpr(new ASTIntLiteral(5), mul, new ASTIntLiteral(3))), sub, new ASTIntLiteral(1))),
+		new ASTVarDecl(new ASTPrimitiveType(TokenType::boolKeyword), z, new ASTUnaryExpr(logicalNot, new ASTBoolLiteral(false))),
 		new ASTExprStmt(new ASTIdentifier(x)),
 		new ASTExprStmt(new ASTBinaryExpr(new ASTIdentifier(x), add, new ASTIntLiteral(5))),
 		new ASTExprStmt(new ASTBinaryExpr(new ASTBinaryExpr(new ASTIdentifier(x), mul, new ASTIdentifier(y)), add, new ASTIdentifier(z))),
@@ -196,7 +197,7 @@ ParserTests::ParserTests()
 		new ASTIfStatement(new ASTBoolLiteral(true), empty, empty),
 		new ASTIfStatement(new ASTIdentifier(x), nestedIf, falseBranch),
 		new ASTIfStatement(new ASTBoolLiteral(true), trueBranch, new ASTIfStatement(new ASTUnaryExpr(logicalNot, new ASTBoolLiteral(false)), trueBranch, trueBranch)),
-		new ASTForLoop(new ASTVarDecl(TokenType::i32Keyword, x, new ASTIntLiteral(0)), new ASTBinaryExpr(new ASTIdentifier(x), lt, new ASTIntLiteral(10)), new ASTPostfix(new ASTIdentifier(x), increment), empty),
+		new ASTForLoop(new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), x, new ASTIntLiteral(0)), new ASTBinaryExpr(new ASTIdentifier(x), lt, new ASTIntLiteral(10)), new ASTPostfix(new ASTIdentifier(x), increment), empty),
 		new ASTForLoop(nullptr, nullptr, nullptr, empty),
 		new ASTForLoop(nullptr, nullptr, nullptr, infiniteFor),
 		new ASTWhileLoop(new ASTBinaryExpr(new ASTIdentifier(x), lt, new ASTIntLiteral(10)), trueBranch)
@@ -206,18 +207,19 @@ ParserTests::ParserTests()
 	foo.value = "foo";
 	Token returnType;
 	returnType.type = TokenType::i32Keyword;
+	ASTPrimitiveType* retType = new ASTPrimitiveType(TokenType::i32Keyword);
 
 	ASTParamList* noParams = new ASTParamList();
 	ASTBlock* fooBody = new ASTBlock();
-	fooBody->statements.emplace_back(new ASTVarDecl(TokenType::i32Keyword, x, new ASTIntLiteral(10)));
+	fooBody->statements.emplace_back(new ASTVarDecl(new ASTPrimitiveType(TokenType::i32Keyword), x, new ASTIntLiteral(10)));
 	fooBody->statements.emplace_back(new ASTExprStmt(new ASTAssign(new ASTIdentifier(x), timesEq, new ASTIntLiteral(10))));
 	fooBody->statements.emplace_back(new ASTReturn(new ASTIdentifier(x)));
 
 	Token bar;
 	bar.value = "bar";
 	ASTParamList* barParams = new ASTParamList();
-	barParams->params.emplace_back(new ASTParameter(x, returnType));
-	barParams->params.emplace_back(new ASTParameter(y, returnType));
+	barParams->params.emplace_back(new ASTParameter(x, retType));
+	barParams->params.emplace_back(new ASTParameter(y, retType));
 	ASTBlock* barBody = new ASTBlock();
 	barBody->statements.emplace_back(new ASTIfStatement(new ASTBinaryExpr(new ASTIdentifier(x), gt, new ASTIdentifier(y)), new ASTReturn(new ASTIdentifier(x)), new ASTReturn(new ASTIdentifier(y))));
 	
@@ -274,6 +276,8 @@ void ParserTests::runAll()
 	for (auto const& [key, val] : testSuite)
 		runSpecific(key);
 
+	std::cout << std::endl;
+
 	logFile.close();
 }
 
@@ -285,10 +289,10 @@ void ParserTests::runSpecific(const std::string & filename)
 
 	const std::vector<ASTNode*> ast = parser.getAst();
 	const std::vector<ASTNode*>& expectedAst = testSuite[filename].expectedAst;
-	size_t expectedNodeCount = expectedAst.size();
+	size_t actualNodeCount = ast.size();
 	bool passed = true;
 
-	for (size_t i = 0; i < expectedNodeCount; i++)
+	for (size_t i = 0; i < actualNodeCount; i++)
 	{
 		if (!(*ast[i] == *expectedAst[i]))
 		{

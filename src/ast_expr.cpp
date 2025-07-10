@@ -6,6 +6,29 @@
 #include "bytecode_emitter.h"
 #include "type_checker.h"
 
+LValue ASTIdentifier::getLValue() const
+{
+	LValue lValue;
+	lValue.kind = LValueKind::Slot;
+	lValue.symbol = this->symbol;
+	return lValue;
+}
+
+LValue ASTArrayAccess::getLValue() const
+{
+	LValue baseLValue = this->arrayExpr->getLValue();
+
+	if (baseLValue.kind == LValueKind::Invalid)
+		return LValue{};
+
+	LValue lValue;
+	lValue.kind = LValueKind::Indirect;
+	lValue.symbol = baseLValue.symbol;
+
+	return lValue;
+}
+
+
 ASTIntLiteral::ASTIntLiteral(uint64_t value)
 {
 	this->value = value;
@@ -116,8 +139,7 @@ ASTIdentifier::ASTIdentifier(Token identifier)
 {
 	this->identifier = identifier;
 	this->typeInfo = nullptr;
-	this->scope = 0;
-	this->slotIndex = 0;
+	this->symbol = nullptr;
 	this->shortCircuitable = false;
 	this->isGroupExpr = false;
 }
@@ -146,8 +168,7 @@ ASTAssign::ASTAssign(ASTExpr* assignee, Token op, ASTExpr* value)
 	this->op = op;
 	this->value = value;
 	this->typeInfo = nullptr;
-	this->slotIndex = 0;
-	this->scope = 0;
+	this->symbol = nullptr;
 	this->shortCircuitable = false;
 	this->isGroupExpr = false;
 }
@@ -243,8 +264,6 @@ ASTUnaryExpr::ASTUnaryExpr(Token op, ASTExpr* expr)
 	this->op = op;
 	this->expr = expr;
 	this->typeInfo = nullptr;
-	this->slotIndex = 0;
-	this->scope = 0;
 	this->shortCircuitable = false;
 	this->isGroupExpr = false;
 }
@@ -331,8 +350,6 @@ ASTPostfix::ASTPostfix(ASTExpr* expr, Token op)
 	this->expr = expr;
 	this->op = op;
 	this->typeInfo = nullptr;
-	this->slotIndex = 0;
-	this->scope = 0;
 	this->shortCircuitable = false;
 	this->isGroupExpr = false;
 }
@@ -407,4 +424,31 @@ void ASTCast::accept(ASTPrinter visitor, uint32_t depth)
 void ASTCast::accept(ASTVisitor& visitor)
 {
 	visitor.visitCast(*this);
+}
+
+ASTArrayAccess::ASTArrayAccess(ASTExpr* arrayExpr, ASTExpr* indexExpr)
+{
+	this->arrayExpr = arrayExpr;
+	this->indexExpr = indexExpr;
+	this->shortCircuitable = false;
+	this->isGroupExpr = false;
+}
+
+bool ASTArrayAccess::operator==(const ASTNode& other) const
+{
+	if (const ASTArrayAccess* node = dynamic_cast<const ASTArrayAccess*>(&other))
+		return ((astEqual(node->arrayExpr, this->arrayExpr))
+			  && astEqual(node->indexExpr, this->indexExpr));
+
+	return false;
+}
+
+void ASTArrayAccess::accept(ASTPrinter visitor, uint32_t depth)
+{
+	visitor.visitArrayAccess(*this, depth);
+}
+
+void ASTArrayAccess::accept(ASTVisitor& visitor)
+{
+	visitor.visitArrayAccess(*this);
 }

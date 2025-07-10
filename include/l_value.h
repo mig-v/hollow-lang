@@ -1,19 +1,21 @@
 #pragma once
 
+#include "symbol_table.h"
+
 enum class LValueKind
 {
-	Slot,
-	Pointer,
-	ArrayElement,
-	StructField,
+	Slot,        // simple variables, like x : i32, etc.
+	Indirect,    // indirect accesses like arr[0] or *ptr
+	StructField, // accessing a structs field
 	Invalid
 };
 
 struct LValue
 {
 	LValueKind kind = LValueKind::Invalid;
-	int slotIndex   = 0;  // for slot
-	int scope       = -1; 
-	int fieldOffset = 0;  // for structs
-	int elementSize = 0;  // for arrays
+
+	// for slot, holds scope / slot index information
+	Symbol* symbol = nullptr;
+
+	// add more as needed
 };

@@ -1,0 +1,20 @@
+func add(a : i32, b : i32) : i32
+{
+    return a + b;
+}
+
+func main() : i32
+{
+    x : i32 = 10;
+    y : i32 = 50;
+    sum : i32 = 0;
+    sum = sum + add(x, y);
+
+    return sum;
+
+    //x : i32 = add(a, b); // call here
+    //sum : i32 = x + c + d + e + f + g + h + i + j + k + l + m + n;
+
+    // should be 105
+    //return sum;
+}

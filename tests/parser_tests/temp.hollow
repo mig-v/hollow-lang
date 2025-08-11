@@ -1,23 +1,87 @@
-globalArray : i32[10];
+//globalArray : i32[10];
 
-func testArray(param : i32[5]) : i32
-{
-    return param[3 + 1] + 6;
+//func testArray(param : i32[5]) : i32
+//{
+    //return param[3 + 1] + 6;
+//}
+
+struct Pixel {
+    r: u8;
+    g: u8;
+    b: u8;
+    a: u8;
 }
+
+struct Image {
+    pixels: Pixel[10][10];
+}
+
+struct Vec2
+{
+    x : f32;
+    y : f32;
+}
+
+struct Transform
+{
+    pos : Vec2;
+}
+
+//func add(lhs : i32, rhs : i32) : i32
+//{
+    //return lhs + rhs;
+//}
+
+func modify(ptr : f32*) : void
+{
+    *ptr = 10.0;
+}
+
+func paramTest(param1 : i32) : void
+{
+
+}
+
 
 func main() : i32
 {
-    x : i32;
-    arr : i32[5];
+    //foo(1);
+    //add(3 + 3, 9);
 
-    arr[0] = 5;
-    arr[1] = 10;
-    arr[2] = 15;
-    arr[3] = 20;
-    arr[4] = 25;
+    //arr[0] = 5;
+    //arr[1] = 10;
+    //arr[2] = 15;
+    //arr[3] = 20;
+    //arr[4] = 25;
+    //array : Transform[4];
 
+    //position : Vec2;
+    //position = array[0];
+    //transform : Transform;
+
+    //position2 : Vec2*;
+
+    //x : i32;
+    //y : i32**;
+
+    //**y = x;
+
+    //x : i32**;
+    //y : i32;
+
+    //*x = &y;
+
+    xPos : i32;
+
+    yPtr : f32*;
+    trans : Transform;
+    //trans.pos.y = 125.3;
+    //yPtr = &trans.pos.y;
+
+    //*yPtr = 3.14;
+    modify(yPtr);
 
     //globalArray[0] = 2;
 
-    return testArray(arr);
+    //return testArray(arr);
 }

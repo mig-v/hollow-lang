@@ -12,7 +12,7 @@ return;
 for;
 if;
 while;
-type;
+struct;
 func;
 break;
 bool;
